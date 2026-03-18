@@ -1,0 +1,35 @@
+parameters: 
+  - ../params/order_uuid.yaml
+
+post:
+  summary: Cancel order
+  operationId: CancelOrderByUUID
+  tags:
+    - Order
+  responses:
+    '204':
+      description: Заказ успешно отменен
+    '404':
+      description: Заказ не найден
+      content:
+        application/json:
+          schema:
+            $ref: ../errors/not_found_error.yaml
+    '409':
+      description: Заказ оплачен и не может быть отменен
+      content:
+        application/json:
+          schema:
+            $ref: ../errors/conflict_error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../errors/internal_server_error.yaml
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: ../errors/generic_error.yaml

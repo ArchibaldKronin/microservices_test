@@ -1,0 +1,14 @@
+# 412
+type: object
+required:
+  - code
+  - message
+properties:
+  code:
+    type: integer
+    description: HTTP код ошибки
+    example: 412
+  message:
+    type: string
+    description: описание ошибки
+    example: "Precondition Failed: The server couldn't meet one or more conditions in the request headers"

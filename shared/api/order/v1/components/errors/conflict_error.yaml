@@ -1,0 +1,14 @@
+# 409
+type: object
+required:
+  - code
+  - message
+properties:
+  code:
+    type: integer
+    description: HTTP код ошибки
+    example: 409
+  message:
+    type: string
+    description: описание ошибки
+    example: "Conflict: The server can't process the request due to a conflict with the resource"
