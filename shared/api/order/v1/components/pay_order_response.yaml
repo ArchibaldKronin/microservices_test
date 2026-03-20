@@ -4,6 +4,6 @@ required:
 properties:
   transaction_uuid:
       type: string
-      format: UUID
+      format: uuid
       description: id транзакции, если оплачено
       example: "6b4f0c92-8d3a-4e1b-9f7c-5a2d8e6c1b30"

@@ -11,29 +11,29 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../pay_order_request.yaml
+          $ref: ../components/pay_order_request.yaml
   responses:
     '200':
       description: Заказ успешно оплачен
       content:
         application/json:
           schema:
-            $ref: ../pay_order_response.yaml
+            $ref: ../components/pay_order_response.yaml
     '404':
       description: Заказ не найден
       content:
         application/json:
           schema:
-            $ref: ../errors/not_found_error.yaml
+            $ref: ../components/errors/not_found_error.yaml
     '500':
       description: Internal server error
       content:
         application/json:
           schema:
-            $ref: ../errors/internal_server_error.yaml
+           $ref: ../components/errors/internal_server_error.yaml
     default:
       description: Unexpected error
       content:
         application/json:
           schema:
-            $ref: ../errors/generic_error.yaml
+            $ref: ../components/errors/generic_error.yaml

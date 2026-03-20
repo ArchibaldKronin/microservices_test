@@ -2,14 +2,14 @@ version: '3'
 
 # Глобальные переменные проекта
 vars:
-  GO_VERSION: '1.24'
+  GO_VERSION: '1.26'
   GOLANGCI_LINT_VERSION: 'v2.1.5'
   GCI_VERSION: 'v0.13.6'
   GOFUMPT_VERSION: 'v0.8.0'
   BUF_VERSION: '1.53.0'
   PROTOC_GEN_GO_VERSION: 'v1.36.6'
   PROTOC_GEN_GO_GRPC_VERSION: 'v1.5.1'
-  OGEN_VERSION: 'v1.12.0'
+  OGEN_VERSION: 'v1.14.0'
   YQ_VERSION: 'v4.45.2'
   GRPCURL_VERSION: 'v1.9.3'
 
@@ -208,6 +208,8 @@ tasks:
     cmds:
       - task: redocly-cli:bundle
       - |
+        cd {{.ROOT_DIR}}
+        
         find {{.OPEN_API_FILES}} -name '*.yaml' -o -name '*.yml' | while read -r file; do
           if [ -f "$file" ] && grep -q 'x-ogen:' "$file"; then
             echo "🚀 Generating from: $file"
@@ -216,6 +218,7 @@ tasks:
             echo "📁 Target: $target"
             echo "📦 Package: $package"
             {{.OGEN}} \
+              -loglevel debug \
               --target "$target" \
               --package "$package" \
               --clean \
@@ -237,7 +240,7 @@ tasks:
         for mod in {{.MODULES}}; do
           if [ -d "$mod" ]; then
             echo "🔄 Обновление зависимостей в $mod"
-            (cd "$mod" && go mod tidy -compat=1.24) || exit 1
+            (cd "$mod" && go mod tidy -compat=1.26) || exit 1
           fi
         done
 

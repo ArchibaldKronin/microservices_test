@@ -5,3 +5,4 @@ enum:
   - SBP
   - CREDIT_CARD
   - INVESTOR_MONEY
+# example: "CREDIT_CARD"
