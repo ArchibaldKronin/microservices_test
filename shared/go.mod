@@ -1,4 +1,4 @@
-module github.com/ArchibaldKronin/microservices_test/platform
+module github.com/ArchibaldKronin/microservices_test/shared
 
 go 1.26.1
 
