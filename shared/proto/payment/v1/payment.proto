@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/payment/v1;payment_v1";
