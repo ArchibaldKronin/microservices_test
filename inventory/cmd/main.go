@@ -297,12 +297,12 @@ outer:
 func main() {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
-		log.Printf("failed to listen: %v\n", err)
+		log.Fatalf("failed to listen: %v\n", err)
 		return
 	}
 	defer func() {
 		if cerr := lis.Close(); cerr != nil {
-			log.Printf("failed to close listenner: %v\n", err)
+			log.Printf("failed to close listenner: %v\n", cerr)
 		}
 	}()
 
@@ -324,10 +324,10 @@ func main() {
 	reflection.Register(s)
 
 	go func() {
-		log.Printf("🚀 gRPC server listening on %d\n", grpcPort)
+		log.Printf("🚀 gRPC Inventory server listening on %d\n", grpcPort)
 		err = s.Serve(lis)
 		if err != nil {
-			log.Printf("failed to serve: %v\n", err)
+			log.Printf("failed to serve Inventory: %v\n", err)
 			return
 		}
 	}()
@@ -335,7 +335,7 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("🛑 Shutting down gRPC server...")
+	log.Println("🛑 Shutting down gRPC Inventory server...")
 	s.GracefulStop()
-	log.Println("✅ Server stopped")
+	log.Println("✅ Inventory server stopped")
 }

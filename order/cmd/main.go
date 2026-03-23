@@ -17,6 +17,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 type OrderStatus string
@@ -100,13 +104,13 @@ type Order struct {
 	Status        OrderStatus
 }
 
-func NewOrder(userId string, partIds []string) *Order {
+func NewOrder(userId string, partIds []string, totalPrice float64) *Order {
 	return &Order{
 		OrderId: uuid.NewString(),
 		UserId:  userId,
 		PartIds: partIds,
 		////////////////////////////
-		Total_price: 100,
+		Total_price: totalPrice,
 		////////////////////////////
 		Status: OrderStatusPENDINGPAYMENT,
 	}
@@ -186,11 +190,13 @@ func ToDTO(o *Order) (order_v1.OrderDto, error) {
 type OrderStorage struct {
 	mu     sync.RWMutex
 	orders map[string]*Order
+	// inventoryClient InventoryClient
 }
 
 func NewOrderStorage() *OrderStorage {
 	return &OrderStorage{
 		orders: make(map[string]*Order),
+		// inventoryClient: invCl,
 	}
 }
 
@@ -212,27 +218,124 @@ func (s *OrderStorage) UpdateOrder(o *Order) {
 	s.orders[o.OrderId] = o
 }
 
+type OrderService struct {
+	storage         *OrderStorage
+	inventoryClient InventoryClient
+}
+
+func NewOrderService(storage *OrderStorage, incCl InventoryClient) *OrderService {
+	return &OrderService{
+		storage:         storage,
+		inventoryClient: incCl,
+	}
+}
+
+func (serv *OrderService) getPartsInfo(ctx context.Context, part_ids []string) ([]string, float64, error) {
+	parts, err := serv.inventoryClient.ListPart(ctx, part_ids)
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			return nil, 0, fmt.Errorf("неудачный запрос, неизвестная ошибка: %w", err)
+		}
+
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, 0, ErrNotFound
+		case codes.Unavailable:
+			return nil, 0, ErrUnavailable
+		default:
+			return nil, 0, err
+		}
+	}
+
+	if len(parts) != len(part_ids) {
+		return nil, 0, ErrNotFound
+	}
+
+	ids := make([]string, 0, len(parts))
+	total_price := 0.0
+	for _, part := range parts {
+		ids = append(ids, part.Uuid)
+		total_price += part.Price
+	}
+	return ids, total_price, nil
+}
+
+func (serv *OrderService) CreateOrder(ctx context.Context, userId string, partIds []string) (*Order, error) {
+	ids, totalPrice, err := serv.getPartsInfo(ctx, partIds)
+	if err != nil {
+		return nil, err
+	}
+
+	order := NewOrder(userId, ids, totalPrice)
+	serv.storage.UpdateOrder(order)
+
+	return order, nil
+}
+
+func (serv *OrderService) GetOrder(id string) (*Order, error) {
+	order := serv.storage.GetOrder(id)
+	if order == nil {
+		return nil, ErrNotFound
+	}
+	return order, nil
+}
+
+func (serv *OrderService) CancelOrder(id string) (OrderStatus, error) {
+	order, err := serv.GetOrder(id)
+	if err != nil {
+		return "", err
+	}
+
+	switch order.Status {
+	case OrderStatusPENDINGPAYMENT:
+		order.Status = OrderStatusCANCELLED
+		serv.storage.UpdateOrder(order)
+		return OrderStatusCANCELLED, nil
+	case OrderStatusPAID:
+		return "", ErrOrderAlreadyPaid
+		// already cancelled
+	default:
+		return OrderStatusCANCELLED, nil
+	}
+}
+
 type OrderHandler struct {
-	storage *OrderStorage
+	// storage *OrderStorage
+	service *OrderService
 }
 
 // Реализует интерфейс order_v1.Handler
-func NewOrderHandler(storage *OrderStorage) *OrderHandler {
+func NewOrderHandler(service *OrderService) *OrderHandler {
 	return &OrderHandler{
-		storage: storage,
+		// storage: storage,
+		service: service,
 	}
 }
 
 func (h *OrderHandler) GetOrderByUUID(_ context.Context, params order_v1.GetOrderByUUIDParams) (order_v1.GetOrderByUUIDRes, error) {
 	id := params.OrderUUID.String()
-	order := h.storage.GetOrder(id)
-
-	if order == nil {
-		return &order_v1.NotFoundError{
-			Code:    404,
-			Message: fmt.Sprintf("Order for id %s not found", id),
-		}, nil
+	order, err := h.service.GetOrder(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrNotFound):
+			return &order_v1.NotFoundError{
+				Code:    404,
+				Message: fmt.Sprintf("Order for id %s not found", id),
+			}, nil
+		default:
+			log.Printf("ошибка получения данных: %v\n", err)
+			return nil, err
+		}
 	}
+	// order := h.service.storage.GetOrder(id)
+
+	// if order == nil {
+	// 	return &order_v1.NotFoundError{
+	// 		Code:    404,
+	// 		Message: fmt.Sprintf("Order for id %s not found", id),
+	// 	}, nil
+	// }
 	orderDTO, err := ToDTO(order)
 	if err != nil {
 		return &order_v1.InternalServerError{
@@ -244,10 +347,38 @@ func (h *OrderHandler) GetOrderByUUID(_ context.Context, params order_v1.GetOrde
 	return &orderDTO, nil
 }
 
-func (h *OrderHandler) CreateOrder(_ context.Context, req *order_v1.CreateOrderRequest) (order_v1.CreateOrderRes, error) {
-	order := NewOrder(req.UserUUID.String(), convertUUIDs(req.PartUuids))
+func (h *OrderHandler) CreateOrder(ctx context.Context, req *order_v1.CreateOrderRequest) (order_v1.CreateOrderRes, error) {
+	reqIds := convertUUIDs(req.PartUuids)
+	order, err := h.service.CreateOrder(ctx, req.UserUUID.String(), reqIds)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrNotFound):
+			return &order_v1.NotFoundError{
+				Code:    404,
+				Message: "some parts not found",
+			}, nil
+		default:
+			log.Printf("ошибка получения данных о запчастях: %v\n", err)
+			return nil, err
+		}
+	}
 
-	h.storage.UpdateOrder(order)
+	// partIds, totalPrice, err := getPartsInfo(ctx, h.storage.inventoryClient, reqIds)
+	// if err != nil {
+	// 	switch {
+	// 	case errors.Is(err, ErrNotFound):
+	// 		return &order_v1.NotFoundError{
+	// 			Code:    404,
+	// 			Message: "some parts not found",
+	// 		}, nil
+	// 	default:
+	// 		log.Printf("ошибка получения данных о запчастях: %v\n", err)
+	// 		return nil, err
+	// 	}
+	// }
+	// order := NewOrder(req.UserUUID.String(), partIds, totalPrice)
+
+	// h.storage.UpdateOrder(order)
 
 	orderId, _ := uuid.Parse(order.OrderId)
 	resp := order_v1.CreateOrderResponse{
@@ -260,7 +391,7 @@ func (h *OrderHandler) CreateOrder(_ context.Context, req *order_v1.CreateOrderR
 
 func (h *OrderHandler) PayOrderByUUID(_ context.Context, req *order_v1.PayOrderRequest, params order_v1.PayOrderByUUIDParams) (order_v1.PayOrderByUUIDRes, error) {
 	id := params.OrderUUID.String()
-	order := h.storage.GetOrder(id)
+	order := h.service.storage.GetOrder(id)
 
 	if order == nil {
 		return &order_v1.NotFoundError{
@@ -280,7 +411,7 @@ func (h *OrderHandler) PayOrderByUUID(_ context.Context, req *order_v1.PayOrderR
 
 	order.Status = OrderStatusPAID
 
-	h.storage.UpdateOrder(order)
+	h.service.storage.UpdateOrder(order)
 
 	return &order_v1.PayOrderResponse{
 		TransactionUUID: trxId,
@@ -289,30 +420,54 @@ func (h *OrderHandler) PayOrderByUUID(_ context.Context, req *order_v1.PayOrderR
 
 func (h *OrderHandler) CancelOrderByUUID(_ context.Context, params order_v1.CancelOrderByUUIDParams) (order_v1.CancelOrderByUUIDRes, error) {
 	id := params.OrderUUID.String()
-	order := h.storage.GetOrder(id)
-
-	if order == nil {
-		return &order_v1.NotFoundError{
-			Code:    404,
-			Message: fmt.Sprintf("Order for id %s not found", id),
-		}, nil
+	// order := h.service.storage.GetOrder(id)
+	orderStatus, err := h.service.CancelOrder(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrNotFound):
+			return &order_v1.NotFoundError{
+				Code:    404,
+				Message: fmt.Sprintf("Order for id %s not found", id),
+			}, nil
+		case errors.Is(err, ErrOrderAlreadyPaid):
+			return &order_v1.ConflictError{
+				Code:    409,
+				Message: fmt.Sprintf("Order %s is already paid", id),
+			}, nil
+		default:
+			log.Printf("ошибка получения данных: %v\n", err)
+			return nil, err
+		}
 	}
 
-	switch order.Status {
-	case OrderStatusPENDINGPAYMENT:
-		order.Status = OrderStatusCANCELLED
-		h.storage.UpdateOrder(order)
+	// if order == nil {
+	// 	return &order_v1.NotFoundError{
+	// 		Code:    404,
+	// 		Message: fmt.Sprintf("Order for id %s not found", id),
+	// 	}, nil
+	// }
+
+	switch orderStatus {
+	case OrderStatusCANCELLED:
 		return &order_v1.CancelOrderByUUIDNoContent{}, nil
-	case OrderStatusPAID:
-		return &order_v1.ConflictError{
-			Code:    409,
-			Message: fmt.Sprintf("Order %s is already paid", id),
-		}, nil
-		// already cancelled
 	default:
 		return &order_v1.CancelOrderByUUIDNoContent{}, nil
-
 	}
+
+	// switch order.Status {
+	// case OrderStatusPENDINGPAYMENT:
+	// 	order.Status = OrderStatusCANCELLED
+	// 	h.service.storage.UpdateOrder(order)
+	// 	return &order_v1.CancelOrderByUUIDNoContent{}, nil
+	// case OrderStatusPAID:
+	// 	return &order_v1.ConflictError{
+	// 		Code:    409,
+	// 		Message: fmt.Sprintf("Order %s is already paid", id),
+	// 	}, nil
+	// 	// already cancelled
+	// default:
+	// 	return &order_v1.CancelOrderByUUIDNoContent{}, nil
+	// }
 }
 
 func (h *OrderHandler) NewError(_ context.Context, err error) *order_v1.GenericErrorStatusCode {
@@ -345,10 +500,65 @@ func convertStringsToUUIDs(in []string) ([]uuid.UUID, error) {
 	return uuids, nil
 }
 
+////////////////////////////////////////////
+
+const serverInventoryAddress = "localhost:50051"
+
+// func getPartsInfo(ctx context.Context, client InventoryClient, part_ids []string) ([]string, float64, error) {
+// 	parts, err := client.ListPart(ctx, part_ids)
+// 	if err != nil {
+// 		st, ok := status.FromError(err)
+// 		if !ok {
+// 			return nil, 0, fmt.Errorf("неудачный запрос, неизвестная ошибка: %w", err)
+// 		}
+
+// 		switch st.Code() {
+// 		case codes.NotFound:
+// 			return nil, 0, ErrNotFound
+// 		case codes.Unavailable:
+// 			return nil, 0, ErrUnavailable
+// 		default:
+// 			return nil, 0, err
+// 		}
+// 	}
+
+// 	if len(parts) != len(part_ids) {
+// 		return nil, 0, ErrNotFound
+// 	}
+
+// 	ids := make([]string, 0, len(parts))
+// 	total_price := 0.0
+// 	for _, part := range parts {
+// 		ids = append(ids, part.Uuid)
+// 		total_price += part.Price
+// 	}
+// 	return ids, total_price, nil
+// }
+
 func main() {
+	/////////////////////////////////////////////////////////////////////// CLIENTS
+	connInventory, err := grpc.NewClient(
+		serverInventoryAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalf("ошибка соединения с Inventory: %v", err)
+	}
+	defer func() {
+		if cerr := connInventory.Close(); cerr != nil {
+			log.Printf("failed to close connect to Inventory: %v", cerr)
+		}
+	}()
+
+	inventoryCl := NewInventoryClient(connInventory)
+	/////////////////////////////////////////////////////////////////////
+
+	////////////////////////// SERVER
 	storage := NewOrderStorage()
 
-	orderHandler := NewOrderHandler(storage)
+	service := NewOrderService(storage, inventoryCl)
+
+	orderHandler := NewOrderHandler(service)
 
 	orderServer, err := order_v1.NewServer(orderHandler)
 	if err != nil {
