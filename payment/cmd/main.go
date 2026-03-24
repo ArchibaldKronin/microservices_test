@@ -73,7 +73,6 @@ func main() {
 	log.Println("🛑 Shutting down gRPC Payment server...")
 	server.GracefulStop()
 	log.Println("✅ Payment server stopped")
-
 }
 
 func LoggerUUID() grpc.UnaryServerInterceptor {
@@ -90,7 +89,7 @@ func LoggerUUID() grpc.UnaryServerInterceptor {
 
 		if info.FullMethod == "/payment.v1.PaymentService/PayOrder" {
 			if v, ok := resp.(*payment_v1.PayOrderResponse); ok {
-				fmt.Println(v.TransactionUuid)
+				log.Print(v.TransactionUuid)
 			}
 		}
 		return resp, err

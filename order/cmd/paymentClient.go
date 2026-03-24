@@ -23,7 +23,7 @@ func mapPaymentMethodToPaymentDTO(pm PaymentMethod) payment_v1.PaymentMethod {
 }
 
 type PaymentClient interface {
-	PayOrder(ctx context.Context, userId string, orderId string, paymentMethod PaymentMethod) (*payment_v1.PayOrderResponse, error)
+	PayOrder(ctx context.Context, userId, orderId string, paymentMethod PaymentMethod) (*payment_v1.PayOrderResponse, error)
 }
 
 type paymentClient struct {
@@ -38,7 +38,7 @@ func NewPaymentClient(conn *grpc.ClientConn) PaymentClient {
 	}
 }
 
-func (c *paymentClient) PayOrder(ctx context.Context, userId string, orderId string, paymentMethod PaymentMethod) (*payment_v1.PayOrderResponse, error) {
+func (c *paymentClient) PayOrder(ctx context.Context, userId, orderId string, paymentMethod PaymentMethod) (*payment_v1.PayOrderResponse, error) {
 	resp, err := c.client.PayOrder(ctx,
 		&payment_v1.PayOrderRequest{
 			UserUuid:      userId,

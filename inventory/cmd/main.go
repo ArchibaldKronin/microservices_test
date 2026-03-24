@@ -12,13 +12,12 @@ import (
 	"syscall"
 	"time"
 
+	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
-	"google.golang.org/grpc"
 )
 
 type Category int
@@ -273,9 +272,7 @@ outer:
 
 		tagOuter:
 			for _, reqTag := range req.Tags {
-
 				for _, innerTag := range part.Tags {
-
 					if innerTag == reqTag {
 						tagMatched = true
 						break tagOuter

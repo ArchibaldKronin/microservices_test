@@ -23,8 +23,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type OrderStatus string
-type PaymentMethod string
+type (
+	OrderStatus   string
+	PaymentMethod string
+)
 
 const (
 	httpPort          = "8080"
@@ -78,6 +80,7 @@ func mapPaymentMethod(pm order_v1.PaymentMethod) PaymentMethod {
 		return PaymentMethodUNKNOWN
 	}
 }
+
 func mapPaymentMethodToOrderDTO(pm PaymentMethod) order_v1.PaymentMethod {
 	switch pm {
 	case PaymentMethodCARD:
@@ -392,7 +395,11 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *order_v1.CreateOrde
 		}
 	}
 
-	orderId, _ := uuid.Parse(order.OrderId)
+	orderId, err := uuid.Parse(order.OrderId)
+	if err != nil {
+		log.Printf("ошибка парсинга uuid: %v\n", err)
+		return nil, err
+	}
 	resp := order_v1.CreateOrderResponse{
 		OrderUUID:  orderId,
 		TotalPrice: float32(order.Total_price),
@@ -508,7 +515,7 @@ func main() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		log.Fatalf("ошибка соединения с Inventory: %v", err)
+		log.Printf("ошибка соединения с Inventory: %v", err)
 	}
 	defer func() {
 		if cerr := connInventory.Close(); cerr != nil {
@@ -523,7 +530,7 @@ func main() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		log.Fatalf("ошибка соединения с Payment: %v", err)
+		log.Printf("ошибка соединения с Payment: %v", err)
 	}
 	defer func() {
 		if cerr := connPayment.Close(); cerr != nil {
@@ -543,7 +550,7 @@ func main() {
 
 	orderServer, err := order_v1.NewServer(orderHandler)
 	if err != nil {
-		log.Fatalf("ошибка создания Order сервера OpenAPI: %v", err)
+		log.Printf("ошибка создания Order сервера OpenAPI: %v", err)
 	}
 
 	r := chi.NewRouter()
