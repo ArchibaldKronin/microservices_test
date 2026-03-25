@@ -1,0 +1,14 @@
+# 401
+type: object
+required:
+  - code
+  - message
+properties:
+  code:
+    type: integer
+    description: HTTP код ошибки
+    example: 401
+  message:
+    type: string
+    description: описание ошибки
+    example: "Unauthorized: The server rejected your request due to missing or invalid authentication"

@@ -1,0 +1,14 @@
+# 404
+type: object
+required:
+  - code
+  - message
+properties:
+  code:
+    type: integer
+    description: HTTP код ошибки
+    example: 404
+  message:
+    type: string
+    description: описание ошибки
+    example: "Not Found: The server can't find the requested resource"

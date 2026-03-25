@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/payment/v1;payment_v1";
+
+// API для взаимодействия с платежным сервисом
+service PaymentService {
+  rpc PayOrder(PayOrderRequest) returns (PayOrderResponse);
+}
+
+// Константы платежных методов
+enum PaymentMethod {
+  // не объявленный
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  // карта
+  PAYMENT_METHOD_CARD = 1;
+  // СБП
+  PAYMENT_METHOD_SBP = 2;
+  // кредитка
+  PAYMENT_METHOD_CREDIT_CARD = 3;
+  // инвестиции
+  PAYMENT_METHOD_INVESTOR_MONEY = 4;
+}
+
+// PayOrderRequest Запрос на оплату заказа
+message PayOrderRequest {
+  string order_uuid = 1;
+  string user_uuid = 2;
+  PaymentMethod payment_method = 3;
+}
+
+// PayOrderResponse Ответ со сгенерированным uuid транзакции
+message PayOrderResponse {
+  string transaction_uuid = 1;
+}

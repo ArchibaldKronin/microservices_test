@@ -1,0 +1,14 @@
+# 429
+type: object
+required:
+  - code
+  - message
+properties:
+  code:
+    type: integer
+    description: HTTP код ошибки
+    example: 429
+  message:
+    type: string
+    description: описание ошибки
+    example: "Too Many Requests"

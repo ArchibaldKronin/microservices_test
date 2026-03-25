@@ -1,0 +1,14 @@
+# 403
+type: object
+required:
+  - code
+  - message
+properties:
+  code:
+    type: integer
+    description: HTTP код ошибки
+    example: 403
+  message:
+    type: string
+    description: описание ошибки
+    example: "Forbidden: The server understood your request but denied access"
