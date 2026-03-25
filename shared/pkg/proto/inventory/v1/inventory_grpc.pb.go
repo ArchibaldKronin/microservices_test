@@ -19,147 +19,147 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PartService_GetPart_FullMethodName  = "/inventory.v1.PartService/GetPart"
-	PartService_ListPart_FullMethodName = "/inventory.v1.PartService/ListPart"
+	InventoryService_GetPart_FullMethodName   = "/inventory.v1.InventoryService/GetPart"
+	InventoryService_ListParts_FullMethodName = "/inventory.v1.InventoryService/ListParts"
 )
 
-// PartServiceClient is the client API for PartService service.
+// InventoryServiceClient is the client API for InventoryService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // API для доступа к запчастям
-type PartServiceClient interface {
+type InventoryServiceClient interface {
 	// Получить запчасть
 	GetPart(ctx context.Context, in *GetPartRequest, opts ...grpc.CallOption) (*GetPartResponse, error)
 	// Получить запчасти по фильтру
-	ListPart(ctx context.Context, in *ListPartRequest, opts ...grpc.CallOption) (*ListPartResponse, error)
+	ListParts(ctx context.Context, in *ListPartsRequest, opts ...grpc.CallOption) (*ListPartsResponse, error)
 }
 
-type partServiceClient struct {
+type inventoryServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewPartServiceClient(cc grpc.ClientConnInterface) PartServiceClient {
-	return &partServiceClient{cc}
+func NewInventoryServiceClient(cc grpc.ClientConnInterface) InventoryServiceClient {
+	return &inventoryServiceClient{cc}
 }
 
-func (c *partServiceClient) GetPart(ctx context.Context, in *GetPartRequest, opts ...grpc.CallOption) (*GetPartResponse, error) {
+func (c *inventoryServiceClient) GetPart(ctx context.Context, in *GetPartRequest, opts ...grpc.CallOption) (*GetPartResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetPartResponse)
-	err := c.cc.Invoke(ctx, PartService_GetPart_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, InventoryService_GetPart_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *partServiceClient) ListPart(ctx context.Context, in *ListPartRequest, opts ...grpc.CallOption) (*ListPartResponse, error) {
+func (c *inventoryServiceClient) ListParts(ctx context.Context, in *ListPartsRequest, opts ...grpc.CallOption) (*ListPartsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListPartResponse)
-	err := c.cc.Invoke(ctx, PartService_ListPart_FullMethodName, in, out, cOpts...)
+	out := new(ListPartsResponse)
+	err := c.cc.Invoke(ctx, InventoryService_ListParts_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// PartServiceServer is the server API for PartService service.
-// All implementations must embed UnimplementedPartServiceServer
+// InventoryServiceServer is the server API for InventoryService service.
+// All implementations must embed UnimplementedInventoryServiceServer
 // for forward compatibility.
 //
 // API для доступа к запчастям
-type PartServiceServer interface {
+type InventoryServiceServer interface {
 	// Получить запчасть
 	GetPart(context.Context, *GetPartRequest) (*GetPartResponse, error)
 	// Получить запчасти по фильтру
-	ListPart(context.Context, *ListPartRequest) (*ListPartResponse, error)
-	mustEmbedUnimplementedPartServiceServer()
+	ListParts(context.Context, *ListPartsRequest) (*ListPartsResponse, error)
+	mustEmbedUnimplementedInventoryServiceServer()
 }
 
-// UnimplementedPartServiceServer must be embedded to have
+// UnimplementedInventoryServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedPartServiceServer struct{}
+type UnimplementedInventoryServiceServer struct{}
 
-func (UnimplementedPartServiceServer) GetPart(context.Context, *GetPartRequest) (*GetPartResponse, error) {
+func (UnimplementedInventoryServiceServer) GetPart(context.Context, *GetPartRequest) (*GetPartResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPart not implemented")
 }
-func (UnimplementedPartServiceServer) ListPart(context.Context, *ListPartRequest) (*ListPartResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListPart not implemented")
+func (UnimplementedInventoryServiceServer) ListParts(context.Context, *ListPartsRequest) (*ListPartsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListParts not implemented")
 }
-func (UnimplementedPartServiceServer) mustEmbedUnimplementedPartServiceServer() {}
-func (UnimplementedPartServiceServer) testEmbeddedByValue()                     {}
+func (UnimplementedInventoryServiceServer) mustEmbedUnimplementedInventoryServiceServer() {}
+func (UnimplementedInventoryServiceServer) testEmbeddedByValue()                          {}
 
-// UnsafePartServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to PartServiceServer will
+// UnsafeInventoryServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to InventoryServiceServer will
 // result in compilation errors.
-type UnsafePartServiceServer interface {
-	mustEmbedUnimplementedPartServiceServer()
+type UnsafeInventoryServiceServer interface {
+	mustEmbedUnimplementedInventoryServiceServer()
 }
 
-func RegisterPartServiceServer(s grpc.ServiceRegistrar, srv PartServiceServer) {
-	// If the following call pancis, it indicates UnimplementedPartServiceServer was
+func RegisterInventoryServiceServer(s grpc.ServiceRegistrar, srv InventoryServiceServer) {
+	// If the following call pancis, it indicates UnimplementedInventoryServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&PartService_ServiceDesc, srv)
+	s.RegisterService(&InventoryService_ServiceDesc, srv)
 }
 
-func _PartService_GetPart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _InventoryService_GetPart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetPartRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PartServiceServer).GetPart(ctx, in)
+		return srv.(InventoryServiceServer).GetPart(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PartService_GetPart_FullMethodName,
+		FullMethod: InventoryService_GetPart_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PartServiceServer).GetPart(ctx, req.(*GetPartRequest))
+		return srv.(InventoryServiceServer).GetPart(ctx, req.(*GetPartRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PartService_ListPart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListPartRequest)
+func _InventoryService_ListParts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPartsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PartServiceServer).ListPart(ctx, in)
+		return srv.(InventoryServiceServer).ListParts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PartService_ListPart_FullMethodName,
+		FullMethod: InventoryService_ListParts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PartServiceServer).ListPart(ctx, req.(*ListPartRequest))
+		return srv.(InventoryServiceServer).ListParts(ctx, req.(*ListPartsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// PartService_ServiceDesc is the grpc.ServiceDesc for PartService service.
+// InventoryService_ServiceDesc is the grpc.ServiceDesc for InventoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var PartService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "inventory.v1.PartService",
-	HandlerType: (*PartServiceServer)(nil),
+var InventoryService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "inventory.v1.InventoryService",
+	HandlerType: (*InventoryServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetPart",
-			Handler:    _PartService_GetPart_Handler,
+			Handler:    _InventoryService_GetPart_Handler,
 		},
 		{
-			MethodName: "ListPart",
-			Handler:    _PartService_ListPart_Handler,
+			MethodName: "ListParts",
+			Handler:    _InventoryService_ListParts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

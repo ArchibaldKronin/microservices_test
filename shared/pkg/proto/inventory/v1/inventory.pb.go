@@ -559,7 +559,52 @@ func (x *GetPartResponse) GetPart() *Part {
 }
 
 // ListPartRequest Запрос получения запчастей по фильтру
-type ListPartRequest struct {
+type ListPartsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Filter        *PartsFilter           `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPartsRequest) Reset() {
+	*x = ListPartsRequest{}
+	mi := &file_inventory_v1_inventory_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPartsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPartsRequest) ProtoMessage() {}
+
+func (x *ListPartsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_inventory_v1_inventory_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPartsRequest.ProtoReflect.Descriptor instead.
+func (*ListPartsRequest) Descriptor() ([]byte, []int) {
+	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ListPartsRequest) GetFilter() *PartsFilter {
+	if x != nil {
+		return x.Filter
+	}
+	return nil
+}
+
+// фильтр для получения запчастей
+type PartsFilter struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Uuids         []string               `protobuf:"bytes,1,rep,name=uuids,proto3" json:"uuids,omitempty"`
 	Names         []string               `protobuf:"bytes,2,rep,name=names,proto3" json:"names,omitempty"`
@@ -570,21 +615,21 @@ type ListPartRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListPartRequest) Reset() {
-	*x = ListPartRequest{}
-	mi := &file_inventory_v1_inventory_proto_msgTypes[6]
+func (x *PartsFilter) Reset() {
+	*x = PartsFilter{}
+	mi := &file_inventory_v1_inventory_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListPartRequest) String() string {
+func (x *PartsFilter) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListPartRequest) ProtoMessage() {}
+func (*PartsFilter) ProtoMessage() {}
 
-func (x *ListPartRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_inventory_v1_inventory_proto_msgTypes[6]
+func (x *PartsFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_inventory_v1_inventory_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -595,40 +640,40 @@ func (x *ListPartRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListPartRequest.ProtoReflect.Descriptor instead.
-func (*ListPartRequest) Descriptor() ([]byte, []int) {
-	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{6}
+// Deprecated: Use PartsFilter.ProtoReflect.Descriptor instead.
+func (*PartsFilter) Descriptor() ([]byte, []int) {
+	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ListPartRequest) GetUuids() []string {
+func (x *PartsFilter) GetUuids() []string {
 	if x != nil {
 		return x.Uuids
 	}
 	return nil
 }
 
-func (x *ListPartRequest) GetNames() []string {
+func (x *PartsFilter) GetNames() []string {
 	if x != nil {
 		return x.Names
 	}
 	return nil
 }
 
-func (x *ListPartRequest) GetCategorys() []Category {
+func (x *PartsFilter) GetCategorys() []Category {
 	if x != nil {
 		return x.Categorys
 	}
 	return nil
 }
 
-func (x *ListPartRequest) GetCountrys() []string {
+func (x *PartsFilter) GetCountrys() []string {
 	if x != nil {
 		return x.Countrys
 	}
 	return nil
 }
 
-func (x *ListPartRequest) GetTags() []string {
+func (x *PartsFilter) GetTags() []string {
 	if x != nil {
 		return x.Tags
 	}
@@ -636,28 +681,28 @@ func (x *ListPartRequest) GetTags() []string {
 }
 
 // ListPartResponse Ответ со списком всех запчастей по фильтру
-type ListPartResponse struct {
+type ListPartsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Parts         []*Part                `protobuf:"bytes,1,rep,name=parts,proto3" json:"parts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListPartResponse) Reset() {
-	*x = ListPartResponse{}
-	mi := &file_inventory_v1_inventory_proto_msgTypes[7]
+func (x *ListPartsResponse) Reset() {
+	*x = ListPartsResponse{}
+	mi := &file_inventory_v1_inventory_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListPartResponse) String() string {
+func (x *ListPartsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListPartResponse) ProtoMessage() {}
+func (*ListPartsResponse) ProtoMessage() {}
 
-func (x *ListPartResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_inventory_v1_inventory_proto_msgTypes[7]
+func (x *ListPartsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_inventory_v1_inventory_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -668,12 +713,12 @@ func (x *ListPartResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListPartResponse.ProtoReflect.Descriptor instead.
-func (*ListPartResponse) Descriptor() ([]byte, []int) {
-	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{7}
+// Deprecated: Use ListPartsResponse.ProtoReflect.Descriptor instead.
+func (*ListPartsResponse) Descriptor() ([]byte, []int) {
+	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *ListPartResponse) GetParts() []*Part {
+func (x *ListPartsResponse) GetParts() []*Part {
 	if x != nil {
 		return x.Parts
 	}
@@ -727,24 +772,26 @@ const file_inventory_v1_inventory_proto_rawDesc = "" +
 	"\x0eGetPartRequest\x12\x12\n" +
 	"\x04uuid\x18\x01 \x01(\tR\x04uuid\"9\n" +
 	"\x0fGetPartResponse\x12&\n" +
-	"\x04part\x18\x01 \x01(\v2\x12.inventory.v1.PartR\x04part\"\xa3\x01\n" +
-	"\x0fListPartRequest\x12\x14\n" +
+	"\x04part\x18\x01 \x01(\v2\x12.inventory.v1.PartR\x04part\"E\n" +
+	"\x10ListPartsRequest\x121\n" +
+	"\x06filter\x18\x01 \x01(\v2\x19.inventory.v1.PartsFilterR\x06filter\"\x9f\x01\n" +
+	"\vPartsFilter\x12\x14\n" +
 	"\x05uuids\x18\x01 \x03(\tR\x05uuids\x12\x14\n" +
 	"\x05names\x18\x02 \x03(\tR\x05names\x124\n" +
 	"\tcategorys\x18\x03 \x03(\x0e2\x16.inventory.v1.CategoryR\tcategorys\x12\x1a\n" +
 	"\bcountrys\x18\x04 \x03(\tR\bcountrys\x12\x12\n" +
-	"\x04tags\x18\x05 \x03(\tR\x04tags\"<\n" +
-	"\x10ListPartResponse\x12(\n" +
+	"\x04tags\x18\x05 \x03(\tR\x04tags\"=\n" +
+	"\x11ListPartsResponse\x12(\n" +
 	"\x05parts\x18\x01 \x03(\v2\x12.inventory.v1.PartR\x05parts*v\n" +
 	"\bCategory\x12\x18\n" +
 	"\x14CATEGORY_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fCATEGORY_ENGINE\x10\x01\x12\x11\n" +
 	"\rCATEGORY_FUEL\x10\x02\x12\x15\n" +
 	"\x11CATEGORY_PORTHOLE\x10\x03\x12\x11\n" +
-	"\rCATEGORY_WING\x10\x042\xa0\x01\n" +
-	"\vPartService\x12F\n" +
-	"\aGetPart\x12\x1c.inventory.v1.GetPartRequest\x1a\x1d.inventory.v1.GetPartResponse\x12I\n" +
-	"\bListPart\x12\x1d.inventory.v1.ListPartRequest\x1a\x1e.inventory.v1.ListPartResponseBZZXgithub.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1;inventory_v1b\x06proto3"
+	"\rCATEGORY_WING\x10\x042\xa8\x01\n" +
+	"\x10InventoryService\x12F\n" +
+	"\aGetPart\x12\x1c.inventory.v1.GetPartRequest\x1a\x1d.inventory.v1.GetPartResponse\x12L\n" +
+	"\tListParts\x12\x1e.inventory.v1.ListPartsRequest\x1a\x1f.inventory.v1.ListPartsResponseBZZXgithub.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1;inventory_v1b\x06proto3"
 
 var (
 	file_inventory_v1_inventory_proto_rawDescOnce sync.Once
@@ -759,7 +806,7 @@ func file_inventory_v1_inventory_proto_rawDescGZIP() []byte {
 }
 
 var file_inventory_v1_inventory_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_inventory_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_inventory_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_inventory_v1_inventory_proto_goTypes = []any{
 	(Category)(0),                 // 0: inventory.v1.Category
 	(*Dimensions)(nil),            // 1: inventory.v1.Dimensions
@@ -768,31 +815,33 @@ var file_inventory_v1_inventory_proto_goTypes = []any{
 	(*Part)(nil),                  // 4: inventory.v1.Part
 	(*GetPartRequest)(nil),        // 5: inventory.v1.GetPartRequest
 	(*GetPartResponse)(nil),       // 6: inventory.v1.GetPartResponse
-	(*ListPartRequest)(nil),       // 7: inventory.v1.ListPartRequest
-	(*ListPartResponse)(nil),      // 8: inventory.v1.ListPartResponse
-	nil,                           // 9: inventory.v1.Part.MetadataEntry
-	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
+	(*ListPartsRequest)(nil),      // 7: inventory.v1.ListPartsRequest
+	(*PartsFilter)(nil),           // 8: inventory.v1.PartsFilter
+	(*ListPartsResponse)(nil),     // 9: inventory.v1.ListPartsResponse
+	nil,                           // 10: inventory.v1.Part.MetadataEntry
+	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
 }
 var file_inventory_v1_inventory_proto_depIdxs = []int32{
 	0,  // 0: inventory.v1.Part.category:type_name -> inventory.v1.Category
 	1,  // 1: inventory.v1.Part.dimensions:type_name -> inventory.v1.Dimensions
 	2,  // 2: inventory.v1.Part.manufacturer:type_name -> inventory.v1.Manufacturer
-	9,  // 3: inventory.v1.Part.metadata:type_name -> inventory.v1.Part.MetadataEntry
-	10, // 4: inventory.v1.Part.created_at:type_name -> google.protobuf.Timestamp
-	10, // 5: inventory.v1.Part.updated_at:type_name -> google.protobuf.Timestamp
+	10, // 3: inventory.v1.Part.metadata:type_name -> inventory.v1.Part.MetadataEntry
+	11, // 4: inventory.v1.Part.created_at:type_name -> google.protobuf.Timestamp
+	11, // 5: inventory.v1.Part.updated_at:type_name -> google.protobuf.Timestamp
 	4,  // 6: inventory.v1.GetPartResponse.part:type_name -> inventory.v1.Part
-	0,  // 7: inventory.v1.ListPartRequest.categorys:type_name -> inventory.v1.Category
-	4,  // 8: inventory.v1.ListPartResponse.parts:type_name -> inventory.v1.Part
-	3,  // 9: inventory.v1.Part.MetadataEntry.value:type_name -> inventory.v1.Value
-	5,  // 10: inventory.v1.PartService.GetPart:input_type -> inventory.v1.GetPartRequest
-	7,  // 11: inventory.v1.PartService.ListPart:input_type -> inventory.v1.ListPartRequest
-	6,  // 12: inventory.v1.PartService.GetPart:output_type -> inventory.v1.GetPartResponse
-	8,  // 13: inventory.v1.PartService.ListPart:output_type -> inventory.v1.ListPartResponse
-	12, // [12:14] is the sub-list for method output_type
-	10, // [10:12] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	8,  // 7: inventory.v1.ListPartsRequest.filter:type_name -> inventory.v1.PartsFilter
+	0,  // 8: inventory.v1.PartsFilter.categorys:type_name -> inventory.v1.Category
+	4,  // 9: inventory.v1.ListPartsResponse.parts:type_name -> inventory.v1.Part
+	3,  // 10: inventory.v1.Part.MetadataEntry.value:type_name -> inventory.v1.Value
+	5,  // 11: inventory.v1.InventoryService.GetPart:input_type -> inventory.v1.GetPartRequest
+	7,  // 12: inventory.v1.InventoryService.ListParts:input_type -> inventory.v1.ListPartsRequest
+	6,  // 13: inventory.v1.InventoryService.GetPart:output_type -> inventory.v1.GetPartResponse
+	9,  // 14: inventory.v1.InventoryService.ListParts:output_type -> inventory.v1.ListPartsResponse
+	13, // [13:15] is the sub-list for method output_type
+	11, // [11:13] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_inventory_v1_inventory_proto_init() }
@@ -812,7 +861,7 @@ func file_inventory_v1_inventory_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_inventory_v1_inventory_proto_rawDesc), len(file_inventory_v1_inventory_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

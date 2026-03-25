@@ -9,15 +9,15 @@ import (
 
 type InventoryClient interface {
 	GetPart(ctx context.Context, uuid string) (*inventory_v1.Part, error)
-	ListPart(ctx context.Context, uuids []string) ([]*inventory_v1.Part, error)
+	ListParts(ctx context.Context, uuids []string) ([]*inventory_v1.Part, error)
 }
 
 type inventoryClient struct {
-	client inventory_v1.PartServiceClient
+	client inventory_v1.InventoryServiceClient
 }
 
 func NewInventoryClient(conn *grpc.ClientConn) InventoryClient {
-	client := inventory_v1.NewPartServiceClient(conn)
+	client := inventory_v1.NewInventoryServiceClient(conn)
 
 	return &inventoryClient{
 		client: client,
@@ -35,9 +35,11 @@ func (c *inventoryClient) GetPart(ctx context.Context, uuid string) (*inventory_
 	return resp.Part, nil
 }
 
-func (c *inventoryClient) ListPart(ctx context.Context, uuids []string) ([]*inventory_v1.Part, error) {
-	resp, err := c.client.ListPart(ctx, &inventory_v1.ListPartRequest{
-		Uuids: uuids,
+func (c *inventoryClient) ListParts(ctx context.Context, uuids []string) ([]*inventory_v1.Part, error) {
+	resp, err := c.client.ListParts(ctx, &inventory_v1.ListPartsRequest{
+		Filter: &inventory_v1.PartsFilter{
+			Uuids: uuids,
+		},
 	})
 	if err != nil {
 		return nil, err

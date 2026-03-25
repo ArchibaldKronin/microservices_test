@@ -235,7 +235,7 @@ func (serv *OrderService) getPartsInfo(ctx context.Context, part_ids []string) (
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	parts, err := serv.inventoryClient.ListPart(ctx, part_ids)
+	parts, err := serv.inventoryClient.ListParts(ctx, part_ids)
 	if err != nil {
 		st, ok := status.FromError(err)
 		if !ok {

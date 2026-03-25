@@ -182,7 +182,7 @@ func NewPartStorage() *PartStorage {
 const grpcPort = 50051
 
 type PartService struct {
-	inventory_v1.UnimplementedPartServiceServer
+	inventory_v1.UnimplementedInventoryServiceServer
 
 	Storage *PartStorage
 }
@@ -227,30 +227,34 @@ func (s *PartService) GetPart(_ context.Context, req *inventory_v1.GetPartReques
 	}, nil
 }
 
-func (s *PartService) ListPart(_ context.Context, req *inventory_v1.ListPartRequest) (*inventory_v1.ListPartResponse, error) {
+func (s *PartService) ListParts(_ context.Context, req *inventory_v1.ListPartsRequest) (*inventory_v1.ListPartsResponse, error) {
 	s.Storage.mu.RLock()
 	defer s.Storage.mu.RUnlock()
+
+	if req.Filter == nil {
+		return nil, status.Error(codes.InvalidArgument, "ошибка: запрос обязан содержать поле filter")
+	}
 
 	var parts []*inventory_v1.Part
 
 outer:
 	for _, part := range s.Storage.Parts {
 
-		if len(req.Uuids) != 0 {
-			if !slices.Contains(req.Uuids, part.Uuid) {
+		if len(req.Filter.Uuids) != 0 {
+			if !slices.Contains(req.Filter.Uuids, part.Uuid) {
 				continue outer
 			}
 		}
 
-		if len(req.Names) != 0 {
-			if !slices.Contains(req.Names, part.Name) {
+		if len(req.Filter.Names) != 0 {
+			if !slices.Contains(req.Filter.Names, part.Name) {
 				continue outer
 			}
 		}
 
-		if len(req.Categorys) != 0 {
+		if len(req.Filter.Categorys) != 0 {
 			categoryMatched := false
-			for _, cat := range req.Categorys {
+			for _, cat := range req.Filter.Categorys {
 				if part.Category == CategoryToDomain(cat) {
 					categoryMatched = true
 					break
@@ -261,17 +265,17 @@ outer:
 			}
 		}
 
-		if len(req.Countrys) != 0 {
-			if !slices.Contains(req.Countrys, part.Manufacturer.Country) {
+		if len(req.Filter.Countrys) != 0 {
+			if !slices.Contains(req.Filter.Countrys, part.Manufacturer.Country) {
 				continue outer
 			}
 		}
 
-		if len(req.Tags) != 0 {
+		if len(req.Filter.Tags) != 0 {
 			tagMatched := false
 
 		tagOuter:
-			for _, reqTag := range req.Tags {
+			for _, reqTag := range req.Filter.Tags {
 				for _, innerTag := range part.Tags {
 					if innerTag == reqTag {
 						tagMatched = true
@@ -286,7 +290,7 @@ outer:
 		parts = append(parts, PartToProto(part))
 	}
 
-	return &inventory_v1.ListPartResponse{
+	return &inventory_v1.ListPartsResponse{
 		Parts: parts,
 	}, nil
 }
@@ -316,7 +320,7 @@ func main() {
 		Storage: storage,
 	}
 
-	inventory_v1.RegisterPartServiceServer(s, service)
+	inventory_v1.RegisterInventoryServiceServer(s, service)
 
 	reflection.Register(s)
 

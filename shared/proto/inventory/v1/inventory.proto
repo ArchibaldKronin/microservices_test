@@ -8,12 +8,12 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1;inventory_v1";
 
 // API для доступа к запчастям
-service PartService {
+service InventoryService {
   // Получить запчасть
   rpc GetPart(GetPartRequest) returns (GetPartResponse);
 
   // Получить запчасти по фильтру
-  rpc ListPart(ListPartRequest) returns (ListPartResponse);
+  rpc ListParts(ListPartsRequest) returns (ListPartsResponse);
 }
 
 // Категория запчасти
@@ -89,7 +89,12 @@ message GetPartResponse {
 }
 
 // ListPartRequest Запрос получения запчастей по фильтру
-message ListPartRequest {
+message ListPartsRequest {
+  PartsFilter filter = 1;
+}
+
+// фильтр для получения запчастей
+message PartsFilter {
   repeated string uuids = 1;
   repeated string names = 2;
   repeated Category categorys = 3;
@@ -98,6 +103,6 @@ message ListPartRequest {
 }
 
 // ListPartResponse Ответ со списком всех запчастей по фильтру
-message ListPartResponse {
+message ListPartsResponse {
   repeated Part parts = 1;
 }
