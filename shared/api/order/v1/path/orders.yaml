@@ -22,6 +22,12 @@ post:
         application/json:
           schema:
             $ref: ../components/errors/not_found_error.yaml
+    '500':
+      description: Внутреняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: ../components/errors/internal_server_error.yaml
     default:
       description: Unexpected error
       content:
