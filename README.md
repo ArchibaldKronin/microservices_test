@@ -1,4 +1,4 @@
-![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/olezhek28/bf33a2bda0693f1162c4323702033d27/raw/coverage.json)
+![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ArchibaldKronin/bbedd34b80f66e31878124e61d2a7868/raw/coverage.json)
 
 # Курс
 
