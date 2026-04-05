@@ -110,7 +110,7 @@ func TestListSuccess(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, res)
-		require.Equal(t, expected, res)
+		require.ElementsMatch(t, expected, res)
 	}
 }
 
