@@ -90,11 +90,7 @@ func TimeToProto(t time.Time) *timestamppb.Timestamp {
 	return timestamppb.New(t)
 }
 
-func FilterToDomain(f *inventory_v1.PartsFilter) (*model.PartsFilter, error) {
-	if f == nil {
-		return nil, model.ErrInvalidArgument
-	}
-
+func FilterToDomain(f *inventory_v1.PartsFilter) *model.PartsFilter {
 	var categorysDomain []model.Category
 	for _, c := range f.Categorys {
 		categorysDomain = append(categorysDomain, CategoryToDomain(c))
@@ -106,5 +102,5 @@ func FilterToDomain(f *inventory_v1.PartsFilter) (*model.PartsFilter, error) {
 		Categorys: categorysDomain,
 		Countrys:  f.Countrys,
 		Tags:      f.Tags,
-	}, nil
+	}
 }

@@ -13,7 +13,7 @@ func (s *service) CreateOrder(ctx context.Context, userId string, partIds []stri
 	}
 
 	order = model.NewOrder(userId, ids, totalPrice)
-	s.orderRepo.CreateOrder(order)
+	s.orderRepo.CreateOrder(ctx, order)
 
 	return order, nil
 }

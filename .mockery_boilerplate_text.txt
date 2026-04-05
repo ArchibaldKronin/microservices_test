@@ -1,0 +1,2 @@
+// Code generated for spaceship factory tests
+// Archibald 2026.

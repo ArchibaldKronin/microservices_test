@@ -7,7 +7,7 @@ import (
 )
 
 func (s *service) CancelOrder(ctx context.Context, orderId string) (err error) {
-	order := s.orderRepo.GetOrder(orderId)
+	order := s.orderRepo.GetOrder(ctx, orderId)
 	if order == nil {
 		return model.ErrNotFound
 	}
@@ -15,7 +15,10 @@ func (s *service) CancelOrder(ctx context.Context, orderId string) (err error) {
 	switch order.Status {
 	case model.OrderStatusPENDINGPAYMENT:
 		order.Status = model.OrderStatusCANCELLED
-		s.orderRepo.UpdateOrder(order)
+		result := s.orderRepo.UpdateOrder(ctx, order)
+		if result == nil {
+			return model.ErrNotFound
+		}
 		return nil
 	case model.OrderStatusPAID:
 		return model.ErrOrderAlreadyPaid

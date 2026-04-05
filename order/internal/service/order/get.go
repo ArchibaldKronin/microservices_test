@@ -7,7 +7,7 @@ import (
 )
 
 func (s *service) GetOrder(ctx context.Context, orderId string) (order *model.Order, err error) {
-	order = s.orderRepo.GetOrder(orderId)
+	order = s.orderRepo.GetOrder(ctx, orderId)
 	if order == nil {
 		return nil, model.ErrNotFound
 	}

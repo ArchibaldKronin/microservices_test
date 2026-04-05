@@ -32,7 +32,7 @@ func main() {
 
 	s := grpc.NewServer()
 
-	repo := inventoryRepo.NewRepository()
+	repo := inventoryRepo.NewRepository(inventoryRepo.InitialParts)
 	service := inventoryService.NewService(repo)
 	api := inventoryV1API.NewApi(service)
 

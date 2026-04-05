@@ -7,7 +7,7 @@ import (
 )
 
 func (s *service) PayOrder(ctx context.Context, orderId string, pm model.PaymentMethod) (transId string, err error) {
-	order := s.orderRepo.GetOrder(orderId)
+	order := s.orderRepo.GetOrder(ctx, orderId)
 	if order == nil {
 		return "", model.ErrNotFound
 	}
@@ -22,7 +22,9 @@ func (s *service) PayOrder(ctx context.Context, orderId string, pm model.Payment
 	order.PaymentMethod = &pm
 	order.TransactionID = &transId
 
-	s.orderRepo.UpdateOrder(order)
-
+	result := s.orderRepo.UpdateOrder(ctx, order)
+	if result == nil {
+		return "", model.ErrNotFound
+	}
 	return
 }

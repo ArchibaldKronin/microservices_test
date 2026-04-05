@@ -14,10 +14,7 @@ func (a *api) ListParts(ctx context.Context, req *inventory_v1.ListPartsRequest)
 	if filter == nil {
 		return nil, status.Error(codes.InvalidArgument, "handler error: запрос обязан содержать поле filter")
 	}
-	filterModel, err := converter.FilterToDomain(filter)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "handler error: запрос обязан содержать поле filter")
-	}
+	filterModel := converter.FilterToDomain(filter)
 
 	parts, err := a.inventoryService.ListParts(ctx, filterModel)
 	if err != nil {

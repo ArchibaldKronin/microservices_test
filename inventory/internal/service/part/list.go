@@ -14,7 +14,6 @@ func (s *service) ListParts(ctx context.Context, filter *model.PartsFilter) ([]*
 	parts, err := s.repo.ListParts(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("error list parts service :%w", err)
-
 	}
 
 	return parts, nil

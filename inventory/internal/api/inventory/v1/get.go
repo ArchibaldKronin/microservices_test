@@ -17,7 +17,7 @@ func (a *api) GetPart(ctx context.Context, req *inventory_v1.GetPartRequest) (*i
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrNotFound):
-			return nil, status.Errorf(codes.NotFound, "запчасть с idЖ %s не найдена", id)
+			return nil, status.Errorf(codes.NotFound, "запчасть с id: %s не найдена", id)
 		default:
 			return nil, status.Error(codes.Internal, "internal error")
 		}

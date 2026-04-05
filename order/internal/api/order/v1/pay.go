@@ -23,8 +23,11 @@ func (a *api) PayOrderByUUID(ctx context.Context, req *order_v1.PayOrderRequest,
 				Code:    404,
 				Message: "order not found",
 			}, nil
-		case errors.Is(err, model.ErrUnavailable):
 		case errors.Is(err, model.ErrInternal):
+			return &order_v1.InternalServerError{
+				Code:    500,
+				Message: "internal server error",
+			}, nil
 		case errors.Is(err, model.ErrUnavailable):
 			return &order_v1.InternalServerError{
 				Code:    503,
