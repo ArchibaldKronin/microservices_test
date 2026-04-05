@@ -1,0 +1,36 @@
+with-expecter: true
+boilerplate-file: ".mockery_boilerplate_text.txt"
+dir: "{{.InterfaceDir}}/mocks"
+filename: "mock_{{.InterfaceNameSnake}}.go"
+outpkg: "mocks"
+mockname: "{{.InterfaceName}}"
+resolve-type-alias: False
+issue-845-fix: True
+
+
+packages:
+# inventory
+  github.com/ArchibaldKronin/microservices_test/inventory/internal/service:
+    config:
+      include-regex: ".*Service"
+
+  github.com/ArchibaldKronin/microservices_test/inventory/internal/repository:
+    config:
+      include-regex: ".*Repository"
+# order
+  github.com/ArchibaldKronin/microservices_test/order/internal/service:
+    config:
+      include-regex: ".*Service"
+
+  github.com/ArchibaldKronin/microservices_test/order/internal/repository:
+    config:
+      include-regex: ".*Repository"
+
+  github.com/ArchibaldKronin/microservices_test/order/internal/client/grpc:
+    config:
+      include-regex: ".*Client"
+# payment
+  github.com/ArchibaldKronin/microservices_test/payment/internal/service:
+    config:
+      include-regex: ".*Service"
+

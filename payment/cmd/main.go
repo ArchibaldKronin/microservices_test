@@ -9,33 +9,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	paymentV1 "github.com/ArchibaldKronin/microservices_test/payment/internal/api/payment/v1"
+	paymentService "github.com/ArchibaldKronin/microservices_test/payment/internal/service/payment"
 	payment_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/payment/v1"
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
-// type PaymentMethod int
-
-// const (
-// 	PaymentMethodUnknown PaymentMethod = iota
-// 	PaymentMethodCard
-// 	PaymentMethodSBP
-// 	PaymentMethodCreditCard
-// 	PaymentMethodInvestorMoney
-// )
-
 const grpcPort = 50052
-
-type PaymentService struct {
-	payment_v1.UnimplementedPaymentServiceServer
-}
-
-func (PaymentService) PayOrder(_ context.Context, req *payment_v1.PayOrderRequest) (*payment_v1.PayOrderResponse, error) {
-	return &payment_v1.PayOrderResponse{
-		TransactionUuid: uuid.NewString(),
-	}, nil
-}
 
 func main() {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
@@ -54,7 +35,11 @@ func main() {
 		),
 	)
 
-	payment_v1.RegisterPaymentServiceServer(server, &PaymentService{})
+	// Регистрация сервера
+	service := paymentService.NewService()
+	api := paymentV1.NewAPI(service)
+
+	payment_v1.RegisterPaymentServiceServer(server, api)
 
 	reflection.Register(server)
 
@@ -89,7 +74,7 @@ func LoggerUUID() grpc.UnaryServerInterceptor {
 
 		if info.FullMethod == "/payment.v1.PaymentService/PayOrder" {
 			if v, ok := resp.(*payment_v1.PayOrderResponse); ok {
-				log.Print(v.TransactionUuid)
+				log.Printf("transaction UUID: %s", v.TransactionUuid)
 			}
 		}
 		return resp, err

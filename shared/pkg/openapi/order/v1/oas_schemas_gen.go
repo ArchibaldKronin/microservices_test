@@ -219,6 +219,7 @@ func (s *InternalServerError) SetMessage(val string) {
 }
 
 func (*InternalServerError) cancelOrderByUUIDRes() {}
+func (*InternalServerError) createOrderRes()       {}
 func (*InternalServerError) getOrderByUUIDRes()    {}
 func (*InternalServerError) payOrderByUUIDRes()    {}
 

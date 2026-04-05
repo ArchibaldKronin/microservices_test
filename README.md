@@ -1,3 +1,5 @@
+![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ArchibaldKronin/bbedd34b80f66e31878124e61d2a7868/raw/coverage.json)
+
 # Курс
 
 Для того чтобы вызывать команды из Taskfile, необходимо установить Taskfile CLI:
