@@ -4,6 +4,7 @@ go 1.26.1
 
 require (
 	github.com/ArchibaldKronin/microservices_test/shared v0.0.0-00010101000000-000000000000
+	github.com/brianvoe/gofakeit/v7 v7.14.1
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/google/uuid v1.6.0
 	github.com/samber/lo v1.53.0
@@ -12,7 +13,6 @@ require (
 )
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.14.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
