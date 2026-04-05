@@ -287,6 +287,16 @@ tasks:
         ERR=0
         for mod in {{.MODULES}}; do
           echo "📦 Обрабатываем модуль: $mod"
+
+          if [ ! -d "$mod" ]; then
+            echo "⚠️  Модуль $mod не существует"
+            continue
+          fi
+
+          if ! go list ./$mod/... >/dev/null 2>&1; then
+            echo "⚠️  Модуль $mod не в go.work"
+            continue
+          fi
         
           TARGET_PKGS=$(go list ./$mod/... \
             | grep -E '/(internal/(service|repository))' \
