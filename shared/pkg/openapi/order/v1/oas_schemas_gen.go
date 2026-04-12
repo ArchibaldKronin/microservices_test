@@ -675,3 +675,36 @@ func (s *PaymentMethod) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+// Ref: #/components/schemas/service_unavailable_error
+type ServiceUnavailableError struct {
+	// HTTP код ошибки.
+	Code int `json:"code"`
+	// Описание ошибки.
+	Message string `json:"message"`
+}
+
+// GetCode returns the value of Code.
+func (s *ServiceUnavailableError) GetCode() int {
+	return s.Code
+}
+
+// GetMessage returns the value of Message.
+func (s *ServiceUnavailableError) GetMessage() string {
+	return s.Message
+}
+
+// SetCode sets the value of Code.
+func (s *ServiceUnavailableError) SetCode(val int) {
+	s.Code = val
+}
+
+// SetMessage sets the value of Message.
+func (s *ServiceUnavailableError) SetMessage(val string) {
+	s.Message = val
+}
+
+func (*ServiceUnavailableError) cancelOrderByUUIDRes() {}
+func (*ServiceUnavailableError) createOrderRes()       {}
+func (*ServiceUnavailableError) getOrderByUUIDRes()    {}
+func (*ServiceUnavailableError) payOrderByUUIDRes()    {}

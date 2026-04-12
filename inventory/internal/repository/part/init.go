@@ -4,6 +4,7 @@ import (
 	"time"
 
 	repoModel "github.com/ArchibaldKronin/microservices_test/inventory/internal/repository/model"
+	"github.com/samber/lo"
 )
 
 var InitialParts = []*repoModel.Part{
@@ -26,13 +27,13 @@ var InitialParts = []*repoModel.Part{
 			Website: "https://jetcorp.example.com",
 		},
 		Tags: []string{"engine", "turbo"},
-		Metadata: map[string]repoModel.Value{
-			"horsepower":   repoModel.Int64Value{Value: 4500},
-			"fuel_type":    repoModel.StringValue{Value: "Jet A-1"},
-			"is_certified": repoModel.BoolValue{Value: true},
+		Metadata: map[string]any{
+			"horsepower":   4500,
+			"fuel_type":    "Jet A-1",
+			"is_certified": true,
 		},
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().Add(-10 * time.Minute),
+		UpdatedAt: lo.ToPtr(time.Now()),
 	},
 	{
 		Uuid:          "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
@@ -53,13 +54,13 @@ var InitialParts = []*repoModel.Part{
 			Website: "https://fueltech.example.com",
 		},
 		Tags: []string{"fuel", "tank"},
-		Metadata: map[string]repoModel.Value{
-			"capacity_liters": repoModel.DoubleValue{Value: 1500.75},
-			"has_sensor":      repoModel.BoolValue{Value: true},
-			"material":        repoModel.StringValue{Value: "Composite"},
+		Metadata: map[string]any{
+			"capacity_liters": 1500.75,
+			"has_sensor":      true,
+			"material":        "Composite",
 		},
 		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		UpdatedAt: nil,
 	},
 	{
 		Uuid:          "7d444840-9dc0-11d1-b245-5ffdce74fad2",
@@ -80,12 +81,12 @@ var InitialParts = []*repoModel.Part{
 			Website: "https://skyworks.example.com",
 		},
 		Tags: []string{"wing", "carbon"},
-		Metadata: map[string]repoModel.Value{
-			"max_load_tons":    repoModel.DoubleValue{Value: 18.5},
-			"has_fuel_channel": repoModel.BoolValue{Value: true},
-			"revision":         repoModel.Int64Value{Value: 3},
+		Metadata: map[string]any{
+			"max_load_tons":    18.5,
+			"has_fuel_channel": true,
+			"revision":         3,
 		},
 		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		UpdatedAt: nil,
 	},
 }

@@ -21,6 +21,11 @@ func (a *api) GetOrderByUUID(ctx context.Context, params order_v1.GetOrderByUUID
 				Code:    404,
 				Message: fmt.Sprintf("Order for id %s not found", id),
 			}, nil
+		case errors.Is(err, model.ErrUnavailable):
+			return &order_v1.ServiceUnavailableError{
+				Code:    503,
+				Message: "get order error: unavailable",
+			}, nil
 		default:
 			log.Printf("get order failed: %v\n", err)
 			return &order_v1.InternalServerError{

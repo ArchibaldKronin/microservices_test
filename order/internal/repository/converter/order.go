@@ -15,10 +15,10 @@ func OrderToDomain(o model.Order) serviceModel.Order {
 	}
 
 	return serviceModel.Order{
-		OrderId:       o.OrderId,
-		UserId:        o.UserId,
-		PartIds:       slices.Clone(o.PartIds),
-		Total_price:   o.Total_price,
+		OrderID:       o.OrderID,
+		UserID:        o.UserID,
+		PartIDs:       slices.Clone(o.PartIDs),
+		TotalPrice:    o.TotalPrice,
 		TransactionID: o.TransactionID,
 		PaymentMethod: pmService,
 		Status:        StatusToDomain(o.Status),
@@ -32,10 +32,10 @@ func OrderToRepo(o serviceModel.Order) model.Order {
 	}
 
 	return model.Order{
-		OrderId:       o.OrderId,
-		UserId:        o.UserId,
-		PartIds:       slices.Clone(o.PartIds),
-		Total_price:   o.Total_price,
+		OrderID:       o.OrderID,
+		UserID:        o.UserID,
+		PartIDs:       slices.Clone(o.PartIDs),
+		TotalPrice:    o.TotalPrice,
 		TransactionID: o.TransactionID,
 		PaymentMethod: pmRepo,
 		Status:        StatusToRepo(o.Status),

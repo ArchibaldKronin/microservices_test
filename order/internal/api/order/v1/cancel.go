@@ -25,6 +25,11 @@ func (a *api) CancelOrderByUUID(ctx context.Context, params order_v1.CancelOrder
 				Code:    409,
 				Message: fmt.Sprintf("Order %s is already paid", id),
 			}, nil
+		case errors.Is(err, model.ErrUnavailable):
+			return &order_v1.ServiceUnavailableError{
+				Code:    503,
+				Message: "cancel order error: unavailable",
+			}, nil
 		default:
 			log.Printf("cancel order failed: %v\n", err)
 			return &order_v1.InternalServerError{

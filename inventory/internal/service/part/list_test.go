@@ -35,7 +35,7 @@ func (s *ServiceSuite) TestListParts() {
 					"is_certified": model.BoolValue{Value: true},
 				},
 				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
+				UpdatedAt: nil,
 			},
 			{
 				Uuid:          "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
@@ -62,7 +62,7 @@ func (s *ServiceSuite) TestListParts() {
 					"material":        model.StringValue{Value: "Composite"},
 				},
 				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
+				UpdatedAt: nil,
 			},
 		}
 

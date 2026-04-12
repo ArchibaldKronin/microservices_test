@@ -9,15 +9,15 @@ import (
 )
 
 func OrderToDTO(o *model.Order) (order_v1.OrderDto, error) {
-	orderIdDTO, err := uuid.Parse(o.OrderId)
+	orderIdDTO, err := uuid.Parse(o.OrderID)
 	if err != nil {
 		return order_v1.OrderDto{}, fmt.Errorf("error parse orderId: %w", err)
 	}
-	userIdDTO, err := uuid.Parse(o.UserId)
+	userIdDTO, err := uuid.Parse(o.UserID)
 	if err != nil {
 		return order_v1.OrderDto{}, fmt.Errorf("error parse orderId: %w", err)
 	}
-	partsIdsDTO, err := convertStringsToUUIDs(o.PartIds)
+	partsIdsDTO, err := convertStringsToUUIDs(o.PartIDs)
 	if err != nil {
 		return order_v1.OrderDto{}, fmt.Errorf("error parse strings to UUIDs: %w", err)
 	}
@@ -46,7 +46,7 @@ func OrderToDTO(o *model.Order) (order_v1.OrderDto, error) {
 		OrderUUID:       orderIdDTO,
 		UserUUID:        userIdDTO,
 		PartUuids:       partsIdsDTO,
-		TotalPrice:      float32(o.Total_price),
+		TotalPrice:      float32(o.TotalPrice),
 		TransactionUUID: optTransactionId,
 		PaymentMethod:   optPaymentMethod,
 		Status:          OrderStatusToDTO(o.Status),

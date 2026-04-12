@@ -11,42 +11,42 @@ const (
 )
 
 type Dimensions struct {
-	Length float64
-	Width  float64
-	Height float64
-	Weight float64
+	Length float64 `bson:"length"`
+	Width  float64 `bson:"width"`
+	Height float64 `bson:"height"`
+	Weight float64 `bson:"weight"`
 }
 
 type Manufacturer struct {
-	Name    string
-	Country string
-	Website string
+	Name    string `bson:"name"`
+	Country string `bson:"country"`
+	Website string `bson:"website"`
 }
 
-type Value interface {
-	isValue()
-}
+// type Value interface {
+// 	isValue()
+// }
 
-type StringValue struct {
-	Value string
-}
+// type StringValue struct {
+// 	Value string
+// }
 
-func (StringValue) isValue() {}
+// func (StringValue) isValue() {}
 
-type Int64Value struct {
-	Value int64
-}
+// type Int64Value struct {
+// 	Value int64
+// }
 
-func (Int64Value) isValue() {}
+// func (Int64Value) isValue() {}
 
-type DoubleValue struct {
-	Value float64
-}
+// type DoubleValue struct {
+// 	Value float64
+// }
 
-func (DoubleValue) isValue() {}
+// func (DoubleValue) isValue() {}
 
-type BoolValue struct {
-	Value bool
-}
+// type BoolValue struct {
+// 	Value bool
+// }
 
-func (BoolValue) isValue() {}
+// func (BoolValue) isValue() {}

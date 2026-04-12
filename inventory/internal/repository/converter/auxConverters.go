@@ -5,6 +5,42 @@ import (
 	repoModel "github.com/ArchibaldKronin/microservices_test/inventory/internal/repository/model"
 )
 
+func ValueToPrimitive(v model.Value) (any, error) {
+	switch val := v.(type) {
+	case *model.StringValue:
+		return val.Value, nil
+	case *model.Int64Value:
+		return val.Value, nil
+	case *model.DoubleValue:
+		return val.Value, nil
+	case *model.BoolValue:
+		return val.Value, nil
+	default:
+		return nil, repoModel.NewMetadataParseValueError(v, nil)
+	}
+}
+
+func PrimitiveToValue(v any) (model.Value, error) {
+	switch val := v.(type) {
+	case string:
+		return model.StringValue{Value: val}, nil
+	case int:
+		return model.Int64Value{Value: int64(val)}, nil
+	case int32:
+		return model.Int64Value{Value: int64(val)}, nil
+	case int64:
+		return model.Int64Value{Value: val}, nil
+	case float32:
+		return model.DoubleValue{Value: float64(val)}, nil
+	case float64:
+		return model.DoubleValue{Value: val}, nil
+	case bool:
+		return model.BoolValue{Value: val}, nil
+	default:
+		return nil, repoModel.NewMetadataParseValueError(v, nil)
+	}
+}
+
 func CategoryToRepo(c model.Category) repoModel.Category {
 	switch c {
 	case 1:
@@ -44,6 +80,15 @@ func DimensionsToDomain(d repoModel.Dimensions) model.Dimensions {
 	}
 }
 
+func DimensionsToRepo(d model.Dimensions) repoModel.Dimensions {
+	return repoModel.Dimensions{
+		Length: d.Length,
+		Width:  d.Width,
+		Height: d.Height,
+		Weight: d.Weight,
+	}
+}
+
 func ManufactererToDomain(m repoModel.Manufacturer) model.Manufacturer {
 	return model.Manufacturer{
 		Name:    m.Name,
@@ -52,25 +97,33 @@ func ManufactererToDomain(m repoModel.Manufacturer) model.Manufacturer {
 	}
 }
 
-func ValueToDomain(val repoModel.Value) model.Value {
-	switch v := val.(type) {
-	case repoModel.StringValue:
-		return model.StringValue{
-			Value: v.Value,
-		}
-	case repoModel.Int64Value:
-		return model.Int64Value{
-			Value: v.Value,
-		}
-	case repoModel.DoubleValue:
-		return model.DoubleValue{
-			Value: v.Value,
-		}
-	case repoModel.BoolValue:
-		return model.BoolValue{
-			Value: v.Value,
-		}
-	default:
-		return nil
+func ManufactererToRepo(m model.Manufacturer) repoModel.Manufacturer {
+	return repoModel.Manufacturer{
+		Name:    m.Name,
+		Country: m.Country,
+		Website: m.Website,
 	}
 }
+
+// func ValueToDomain(val repoModel.Value) model.Value {
+// 	switch v := val.(type) {
+// 	case repoModel.StringValue:
+// 		return model.StringValue{
+// 			Value: v.Value,
+// 		}
+// 	case repoModel.Int64Value:
+// 		return model.Int64Value{
+// 			Value: v.Value,
+// 		}
+// 	case repoModel.DoubleValue:
+// 		return model.DoubleValue{
+// 			Value: v.Value,
+// 		}
+// 	case repoModel.BoolValue:
+// 		return model.BoolValue{
+// 			Value: v.Value,
+// 		}
+// 	default:
+// 		return nil
+// 	}
+// }

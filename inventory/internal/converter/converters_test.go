@@ -40,7 +40,7 @@ func TestConverters(t *testing.T) {
 				"is_certified": model.BoolValue{Value: true},
 			},
 			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			UpdatedAt: nil,
 		}
 
 		expected := inventory_v1.Part{
@@ -68,7 +68,7 @@ func TestConverters(t *testing.T) {
 				"is_certified": {Value: &inventory_v1.Value_BoolValue{BoolValue: true}},
 			},
 			CreatedAt: timestamppb.New(part.CreatedAt),
-			UpdatedAt: timestamppb.New(part.UpdatedAt),
+			UpdatedAt: nil,
 		}
 
 		res := PartToProto(&part)
