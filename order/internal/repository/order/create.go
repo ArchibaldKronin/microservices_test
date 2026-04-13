@@ -51,9 +51,4 @@ func (r *repository) CreateOrder(ctx context.Context, o *serviceModel.Order) err
 	}
 
 	return nil
-
-	// r.mu.Lock()
-	// defer r.mu.Unlock()
-
-	// r.pgRepo[o.OrderId] = converter.OrderToRepo(*o)
 }

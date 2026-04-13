@@ -16,68 +16,10 @@ import (
 
 func (r *repository) GetOrder(ctx context.Context, id string) (*serviceModel.Order, error) {
 	return r.getOrder(ctx, r.pgRepo, id)
-	// buildSelectOne := sq.Select(def.RepoFields...).
-	// 	From(def.TABLE_NAME).
-	// 	PlaceholderFormat(sq.Dollar).
-	// 	Where(sq.Eq{"order_id": id}).
-	// 	Limit(1)
-
-	// query, args, err := buildSelectOne.ToSql()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("%w: %v", model.ErrBuildQuery, err)
-	// }
-
-	// order := model.Order{}
-	// err = r.pgRepo.QueryRow(ctx, query, args...).Scan(
-	// 	&order.OrderID,
-	// 	&order.UserID,
-	// 	&order.PartIDs,
-	// 	&order.TotalPrice,
-	// 	&order.TransactionID,
-	// 	&order.PaymentMethod,
-	// 	&order.Status,
-	// )
-	// if err != nil {
-	// 	if errors.Is(err, pgx.ErrNoRows) {
-	// 		return nil, model.ErrNotFound
-	// 	}
-	// 	return nil, fmt.Errorf("%w id: %s: %v", model.ErrSelectQuery, id, err)
-	// }
-
-	// return lo.ToPtr(converter.OrderToDomain(order)), nil
 }
 
 func (r *repository) GetOrderTx(ctx context.Context, tx pgx.Tx, id string) (*serviceModel.Order, error) {
 	return r.getOrder(ctx, tx, id)
-	// buildSelectOne := sq.Select(def.RepoFields...).
-	// 	From(def.TABLE_NAME).
-	// 	PlaceholderFormat(sq.Dollar).
-	// 	Where(sq.Eq{"order_id": id}).
-	// 	Limit(1)
-
-	// query, args, err := buildSelectOne.ToSql()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("%w: %v", model.ErrBuildQuery, err)
-	// }
-
-	// order := model.Order{}
-	// err = tx.QueryRow(ctx, query, args...).Scan(
-	// 	&order.OrderID,
-	// 	&order.UserID,
-	// 	&order.PartIDs,
-	// 	&order.TotalPrice,
-	// 	&order.TransactionID,
-	// 	&order.PaymentMethod,
-	// 	&order.Status,
-	// )
-	// if err != nil {
-	// 	if errors.Is(err, pgx.ErrNoRows) {
-	// 		return nil, model.ErrNotFound
-	// 	}
-	// 	return nil, fmt.Errorf("%w id: %s: %v", model.ErrSelectQuery, id, err)
-	// }
-
-	// return lo.ToPtr(converter.OrderToDomain(order)), nil
 }
 
 func (r *repository) getOrder(ctx context.Context, q interface {

@@ -7,13 +7,13 @@ import (
 
 func ValueToPrimitive(v model.Value) (any, error) {
 	switch val := v.(type) {
-	case *model.StringValue:
+	case model.StringValue:
 		return val.Value, nil
-	case *model.Int64Value:
+	case model.Int64Value:
 		return val.Value, nil
-	case *model.DoubleValue:
+	case model.DoubleValue:
 		return val.Value, nil
-	case *model.BoolValue:
+	case model.BoolValue:
 		return val.Value, nil
 	default:
 		return nil, repoModel.NewMetadataParseValueError(v, nil)

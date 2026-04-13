@@ -9,6 +9,7 @@ import (
 	context "context"
 
 	model "github.com/ArchibaldKronin/microservices_test/order/internal/model"
+	pgx "github.com/jackc/pgx/v5"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -25,9 +26,80 @@ func (_m *OrderRepository) EXPECT() *OrderRepository_Expecter {
 	return &OrderRepository_Expecter{mock: &_m.Mock}
 }
 
+// BeginTx provides a mock function with given fields: ctx
+func (_m *OrderRepository) BeginTx(ctx context.Context) (pgx.Tx, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BeginTx")
+	}
+
+	var r0 pgx.Tx
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (pgx.Tx, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) pgx.Tx); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(pgx.Tx)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// OrderRepository_BeginTx_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BeginTx'
+type OrderRepository_BeginTx_Call struct {
+	*mock.Call
+}
+
+// BeginTx is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *OrderRepository_Expecter) BeginTx(ctx interface{}) *OrderRepository_BeginTx_Call {
+	return &OrderRepository_BeginTx_Call{Call: _e.mock.On("BeginTx", ctx)}
+}
+
+func (_c *OrderRepository_BeginTx_Call) Run(run func(ctx context.Context)) *OrderRepository_BeginTx_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *OrderRepository_BeginTx_Call) Return(_a0 pgx.Tx, _a1 error) *OrderRepository_BeginTx_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *OrderRepository_BeginTx_Call) RunAndReturn(run func(context.Context) (pgx.Tx, error)) *OrderRepository_BeginTx_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateOrder provides a mock function with given fields: ctx, o
-func (_m *OrderRepository) CreateOrder(ctx context.Context, o *model.Order) {
-	_m.Called(ctx, o)
+func (_m *OrderRepository) CreateOrder(ctx context.Context, o *model.Order) error {
+	ret := _m.Called(ctx, o)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateOrder")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Order) error); ok {
+		r0 = rf(ctx, o)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // OrderRepository_CreateOrder_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateOrder'
@@ -49,18 +121,18 @@ func (_c *OrderRepository_CreateOrder_Call) Run(run func(ctx context.Context, o 
 	return _c
 }
 
-func (_c *OrderRepository_CreateOrder_Call) Return() *OrderRepository_CreateOrder_Call {
-	_c.Call.Return()
+func (_c *OrderRepository_CreateOrder_Call) Return(_a0 error) *OrderRepository_CreateOrder_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *OrderRepository_CreateOrder_Call) RunAndReturn(run func(context.Context, *model.Order)) *OrderRepository_CreateOrder_Call {
-	_c.Run(run)
+func (_c *OrderRepository_CreateOrder_Call) RunAndReturn(run func(context.Context, *model.Order) error) *OrderRepository_CreateOrder_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
 // GetOrder provides a mock function with given fields: ctx, id
-func (_m *OrderRepository) GetOrder(ctx context.Context, id string) *model.Order {
+func (_m *OrderRepository) GetOrder(ctx context.Context, id string) (*model.Order, error) {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
@@ -68,6 +140,10 @@ func (_m *OrderRepository) GetOrder(ctx context.Context, id string) *model.Order
 	}
 
 	var r0 *model.Order
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Order, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Order); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -76,7 +152,13 @@ func (_m *OrderRepository) GetOrder(ctx context.Context, id string) *model.Order
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // OrderRepository_GetOrder_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOrder'
@@ -98,31 +180,89 @@ func (_c *OrderRepository_GetOrder_Call) Run(run func(ctx context.Context, id st
 	return _c
 }
 
-func (_c *OrderRepository_GetOrder_Call) Return(_a0 *model.Order) *OrderRepository_GetOrder_Call {
-	_c.Call.Return(_a0)
+func (_c *OrderRepository_GetOrder_Call) Return(_a0 *model.Order, _a1 error) *OrderRepository_GetOrder_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *OrderRepository_GetOrder_Call) RunAndReturn(run func(context.Context, string) *model.Order) *OrderRepository_GetOrder_Call {
+func (_c *OrderRepository_GetOrder_Call) RunAndReturn(run func(context.Context, string) (*model.Order, error)) *OrderRepository_GetOrder_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetOrderTx provides a mock function with given fields: ctx, tx, id
+func (_m *OrderRepository) GetOrderTx(ctx context.Context, tx pgx.Tx, id string) (*model.Order, error) {
+	ret := _m.Called(ctx, tx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetOrderTx")
+	}
+
+	var r0 *model.Order
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx, string) (*model.Order, error)); ok {
+		return rf(ctx, tx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx, string) *model.Order); ok {
+		r0 = rf(ctx, tx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Order)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, pgx.Tx, string) error); ok {
+		r1 = rf(ctx, tx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// OrderRepository_GetOrderTx_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOrderTx'
+type OrderRepository_GetOrderTx_Call struct {
+	*mock.Call
+}
+
+// GetOrderTx is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx pgx.Tx
+//   - id string
+func (_e *OrderRepository_Expecter) GetOrderTx(ctx interface{}, tx interface{}, id interface{}) *OrderRepository_GetOrderTx_Call {
+	return &OrderRepository_GetOrderTx_Call{Call: _e.mock.On("GetOrderTx", ctx, tx, id)}
+}
+
+func (_c *OrderRepository_GetOrderTx_Call) Run(run func(ctx context.Context, tx pgx.Tx, id string)) *OrderRepository_GetOrderTx_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(pgx.Tx), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *OrderRepository_GetOrderTx_Call) Return(_a0 *model.Order, _a1 error) *OrderRepository_GetOrderTx_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *OrderRepository_GetOrderTx_Call) RunAndReturn(run func(context.Context, pgx.Tx, string) (*model.Order, error)) *OrderRepository_GetOrderTx_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateOrder provides a mock function with given fields: ctx, o
-func (_m *OrderRepository) UpdateOrder(ctx context.Context, o *model.Order) *model.Order {
+func (_m *OrderRepository) UpdateOrder(ctx context.Context, o *model.Order) error {
 	ret := _m.Called(ctx, o)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateOrder")
 	}
 
-	var r0 *model.Order
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Order) *model.Order); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Order) error); ok {
 		r0 = rf(ctx, o)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Order)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -147,12 +287,60 @@ func (_c *OrderRepository_UpdateOrder_Call) Run(run func(ctx context.Context, o 
 	return _c
 }
 
-func (_c *OrderRepository_UpdateOrder_Call) Return(_a0 *model.Order) *OrderRepository_UpdateOrder_Call {
+func (_c *OrderRepository_UpdateOrder_Call) Return(_a0 error) *OrderRepository_UpdateOrder_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *OrderRepository_UpdateOrder_Call) RunAndReturn(run func(context.Context, *model.Order) *model.Order) *OrderRepository_UpdateOrder_Call {
+func (_c *OrderRepository_UpdateOrder_Call) RunAndReturn(run func(context.Context, *model.Order) error) *OrderRepository_UpdateOrder_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateOrderTx provides a mock function with given fields: ctx, tx, o
+func (_m *OrderRepository) UpdateOrderTx(ctx context.Context, tx pgx.Tx, o *model.Order) error {
+	ret := _m.Called(ctx, tx, o)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateOrderTx")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx, *model.Order) error); ok {
+		r0 = rf(ctx, tx, o)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// OrderRepository_UpdateOrderTx_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateOrderTx'
+type OrderRepository_UpdateOrderTx_Call struct {
+	*mock.Call
+}
+
+// UpdateOrderTx is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx pgx.Tx
+//   - o *model.Order
+func (_e *OrderRepository_Expecter) UpdateOrderTx(ctx interface{}, tx interface{}, o interface{}) *OrderRepository_UpdateOrderTx_Call {
+	return &OrderRepository_UpdateOrderTx_Call{Call: _e.mock.On("UpdateOrderTx", ctx, tx, o)}
+}
+
+func (_c *OrderRepository_UpdateOrderTx_Call) Run(run func(ctx context.Context, tx pgx.Tx, o *model.Order)) *OrderRepository_UpdateOrderTx_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(pgx.Tx), args[2].(*model.Order))
+	})
+	return _c
+}
+
+func (_c *OrderRepository_UpdateOrderTx_Call) Return(_a0 error) *OrderRepository_UpdateOrderTx_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *OrderRepository_UpdateOrderTx_Call) RunAndReturn(run func(context.Context, pgx.Tx, *model.Order) error) *OrderRepository_UpdateOrderTx_Call {
 	_c.Call.Return(run)
 	return _c
 }
