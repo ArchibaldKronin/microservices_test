@@ -6,41 +6,15 @@ import (
 	"log/slog"
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
+	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	repoModel "github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
-	"github.com/jackc/pgx/v5"
 )
 
 func (s *service) CancelOrder(ctx context.Context, orderId string) error {
-	tx, err := s.orderRepo.BeginTx(ctx)
-	if err != nil {
-		slog.Error("error beginning tx", "error", err)
-		return model.ErrInternal
-	}
-
-	defer func() {
-		rerr := tx.Rollback(ctx)
-		if rerr != nil && !errors.Is(rerr, pgx.ErrTxClosed) {
-			slog.Warn("rollback failed", "error", rerr)
-		}
-	}()
-
-	order, err := s.orderRepo.GetOrderTx(ctx, tx, orderId)
-	if err != nil {
-		slog.Error("error getting order", "error", err)
-
-		if errors.Is(err, repoModel.ErrNotFound) {
-			return model.ErrNotFound
-		}
-		return model.ErrInternal
-	}
-
-	switch order.Status {
-
-	case model.OrderStatusPENDINGPAYMENT:
-		order.Status = model.OrderStatusCANCELLED
-		err = s.orderRepo.UpdateOrderTx(ctx, tx, order)
+	err := s.txManager.WithTransaction(ctx, func(executer repository.OrderRepository) error {
+		order, err := executer.GetOrder(ctx, orderId)
 		if err != nil {
-			slog.Error("error updating order", "error", err)
+			slog.Error("error getting order", "error", err)
 
 			if errors.Is(err, repoModel.ErrNotFound) {
 				return model.ErrNotFound
@@ -48,19 +22,30 @@ func (s *service) CancelOrder(ctx context.Context, orderId string) error {
 			return model.ErrInternal
 		}
 
-		err = tx.Commit(ctx)
-		if err != nil {
-			slog.Error("error committing tx:", "error", err)
-			return model.ErrInternal
+		switch order.Status {
+		case model.OrderStatusPENDINGPAYMENT:
+			order.Status = model.OrderStatusCANCELLED
+			err = executer.UpdateOrder(ctx, order)
+			if err != nil {
+
+				if errors.Is(err, repoModel.ErrNotFound) {
+					slog.Error("error NON CONSISTENT DATA", "error", err)
+					return model.ErrNotFound
+				} else {
+					slog.Error("error updating order", "error", err)
+					return model.ErrInternal
+				}
+			}
+			return nil
+		case model.OrderStatusPAID:
+			return model.ErrOrderAlreadyPaid
+		default:
+			return nil
 		}
+	})
 
-		return nil
-
-	case model.OrderStatusPAID:
-		return model.ErrOrderAlreadyPaid
-
-		// already cancelled
-	default:
-		return nil
+	if err != nil {
+		return err
 	}
+	return nil
 }

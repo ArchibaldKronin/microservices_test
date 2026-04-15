@@ -18,6 +18,7 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/order/internal/migrator"
 	repo "github.com/ArchibaldKronin/microservices_test/order/internal/repository/order"
 	service "github.com/ArchibaldKronin/microservices_test/order/internal/service/order"
+	txmanager "github.com/ArchibaldKronin/microservices_test/order/internal/txManager"
 	order_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
 	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
 	payment_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/payment/v1"
@@ -95,7 +96,9 @@ func main() {
 
 	storage := repo.NewRepository(pool)
 
-	service := service.NewService(storage, inventoryClient, paymentClient)
+	txManager := txmanager.NewTxRepoManager(pool)
+
+	service := service.NewService(storage, txManager, inventoryClient, paymentClient)
 
 	handler := api.NewApi(service)
 

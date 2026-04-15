@@ -5,21 +5,28 @@ import (
 
 	def "github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var _ def.OrderRepository = (*repository)(nil)
 
-type repository struct {
-	pgRepo *pgxpool.Pool
+type pgQueryInterface interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
-func NewRepository(pool *pgxpool.Pool) *repository {
+type repository struct {
+	// pgRepo *pgxpool.Pool
+	pgExecuter pgQueryInterface
+}
+
+// func NewRepository(pool *pgxpool.Pool) *repository {
+func NewRepository(exec pgQueryInterface) *repository {
 	return &repository{
-		pgRepo: pool,
+		pgExecuter: exec,
 	}
 }
 
-func (r *repository) BeginTx(ctx context.Context) (pgx.Tx, error) {
-	return r.pgRepo.Begin(ctx)
-}
+// func (r *repository) BeginTx(ctx context.Context) (pgx.Tx, error) {
+// 	return r.pgRepo.Begin(ctx)
+// }

@@ -22,6 +22,10 @@ packages:
     config:
       include-regex: ".*Service"
 
+  github.com/ArchibaldKronin/microservices_test/order/internal/txManager:
+    config:
+      include-regex: ".*TxManager"      
+
   github.com/ArchibaldKronin/microservices_test/order/internal/repository:
     config:
       include-regex: ".*Repository"

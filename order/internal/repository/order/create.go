@@ -35,7 +35,8 @@ func (r *repository) CreateOrder(ctx context.Context, o *serviceModel.Order) err
 		return model.ErrBuildQuery
 	}
 
-	_, err = r.pgRepo.Exec(ctx, query, args...)
+	// _, err = r.pgRepo.Exec(ctx, query, args...)
+	_, err = r.pgExecuter.Exec(ctx, query, args...)
 	if err != nil {
 
 		var pgErr *pgconn.PgError
