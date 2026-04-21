@@ -27,7 +27,6 @@ func (s *service) CancelOrder(ctx context.Context, orderId string) error {
 			order.Status = model.OrderStatusCANCELLED
 			err = executer.UpdateOrder(ctx, order)
 			if err != nil {
-
 				if errors.Is(err, repoModel.ErrNotFound) {
 					slog.Error("error NON CONSISTENT DATA", "error", err)
 					return model.ErrNotFound
@@ -43,7 +42,6 @@ func (s *service) CancelOrder(ctx context.Context, orderId string) error {
 			return nil
 		}
 	})
-
 	if err != nil {
 		return err
 	}

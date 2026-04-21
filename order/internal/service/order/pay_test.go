@@ -4,7 +4,6 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	repoModel "github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
-
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/mock"
 )

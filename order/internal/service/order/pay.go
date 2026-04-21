@@ -44,13 +44,11 @@ func (s *service) PayOrder(ctx context.Context, orderId string, pm model.Payment
 				slog.Error("error updating order", "error", err)
 				return model.ErrInternal
 			}
-
 		}
 
 		result = transId
 		return nil
 	})
-
 	if err != nil {
 		return "", err
 	}

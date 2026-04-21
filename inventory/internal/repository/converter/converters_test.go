@@ -5,7 +5,6 @@ import (
 
 	"github.com/ArchibaldKronin/microservices_test/inventory/internal/model"
 	repoModel "github.com/ArchibaldKronin/microservices_test/inventory/internal/repository/model"
-
 	// "github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/require"
 )
