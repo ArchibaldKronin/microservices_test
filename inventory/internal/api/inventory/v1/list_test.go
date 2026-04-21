@@ -47,7 +47,7 @@ func (a *ApiSuite) TestListPartsSuccess() {
 				"is_certified": model.BoolValue{Value: true},
 			},
 			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			UpdatedAt: nil,
 		}
 
 		expParts = []*inventory_v1.Part{converter.PartToProto(&part)}

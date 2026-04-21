@@ -5,6 +5,7 @@ import (
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -12,14 +13,13 @@ func (s *ServiceSuite) TestGetPartsInfoSuccess() {
 	var (
 		partId  = gofakeit.UUID()
 		partsId = []string{partId}
-		// userId  = gofakeit.UUID()
 
 		filter = model.PartsFilter{
 			Uuids: partsId,
 		}
 
-		createdAt = time.Now()
 		updatedAt = time.Now()
+		createdAt = time.Now().Add(-10 * time.Minute)
 
 		part = model.Part{
 			Uuid:          partId,
@@ -46,7 +46,7 @@ func (s *ServiceSuite) TestGetPartsInfoSuccess() {
 				"is_certified": model.BoolValue{Value: true},
 			},
 			CreatedAt: createdAt,
-			UpdatedAt: updatedAt,
+			UpdatedAt: lo.ToPtr(updatedAt),
 		}
 	)
 
@@ -113,8 +113,8 @@ func (s *ServiceSuite) TestGetPartsErrNotFound() {
 			Uuids: partsId,
 		}
 
-		createdAt = time.Now()
 		updatedAt = time.Now()
+		createdAt = time.Now().Add(-10 * time.Minute)
 
 		part1 = model.Part{
 			Uuid:          partId1,
@@ -141,7 +141,7 @@ func (s *ServiceSuite) TestGetPartsErrNotFound() {
 				"is_certified": model.BoolValue{Value: true},
 			},
 			CreatedAt: createdAt,
-			UpdatedAt: updatedAt,
+			UpdatedAt: lo.ToPtr(updatedAt),
 		}
 
 		expectedError = model.ErrNotFound
@@ -167,8 +167,8 @@ func (s *ServiceSuite) TestCreateSuccess() {
 			Uuids: partsId,
 		}
 
-		createdAt = time.Now()
 		updatedAt = time.Now()
+		createdAt = time.Now().Add(-10 * time.Minute)
 
 		part = model.Part{
 			Uuid:          partId,
@@ -195,23 +195,23 @@ func (s *ServiceSuite) TestCreateSuccess() {
 				"is_certified": model.BoolValue{Value: true},
 			},
 			CreatedAt: createdAt,
-			UpdatedAt: updatedAt,
+			UpdatedAt: lo.ToPtr(updatedAt),
 		}
 
 		order = model.NewOrder(userId, partsId, part.Price)
 	)
 
 	s.inventoryClient.EXPECT().ListParts(s.ctx, filter).Return([]*model.Part{&part}, nil).Once()
-	s.orderRepository.EXPECT().CreateOrder(s.ctx, mock.AnythingOfType("*model.Order")).Once()
+	s.orderRepository.EXPECT().CreateOrder(s.ctx, mock.AnythingOfType("*model.Order")).Return(nil).Once()
 
 	res, err := s.service.CreateOrder(s.ctx, userId, partsId)
 
 	s.NoError(err)
-	s.Equal(order.PartIds, res.PartIds)
+	s.Equal(order.PartIDs, res.PartIDs)
 	s.Equal(order.PaymentMethod, res.PaymentMethod)
 	s.Equal(order.Status, res.Status)
-	s.Equal(order.PartIds, res.PartIds)
-	s.Equal(order.UserId, res.UserId)
+	s.Equal(order.PartIDs, res.PartIDs)
+	s.Equal(order.UserID, res.UserID)
 }
 
 func (s *ServiceSuite) TestCreateErrInvalidArgument() {
@@ -272,8 +272,8 @@ func (s *ServiceSuite) TestCreateErrNotFound() {
 			Uuids: partsId,
 		}
 
-		createdAt = time.Now()
-		updatedAt = time.Now()
+		updatedAt = (*time.Time)(nil)
+		createdAt = time.Now().Add(-10 * time.Minute)
 
 		part1 = model.Part{
 			Uuid:          partId1,

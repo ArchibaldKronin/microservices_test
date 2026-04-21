@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 )
@@ -9,11 +10,15 @@ import (
 func (s *service) CreateOrder(ctx context.Context, userId string, partIds []string) (order *model.Order, err error) {
 	ids, totalPrice, err := s.getPartsInfo(ctx, partIds)
 	if err != nil {
+		slog.Error("error creating order", "error", err)
 		return nil, err
 	}
 
 	order = model.NewOrder(userId, ids, totalPrice)
-	s.orderRepo.CreateOrder(ctx, order)
+	if err = s.orderRepo.CreateOrder(ctx, order); err != nil {
+		slog.Error("error saving order", "error", err)
+		return nil, model.ErrInternal
+	}
 
 	return order, nil
 }

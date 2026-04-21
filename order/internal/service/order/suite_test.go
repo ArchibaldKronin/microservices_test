@@ -6,6 +6,7 @@ import (
 
 	clientMocks "github.com/ArchibaldKronin/microservices_test/order/internal/client/grpc/mocks"
 	orderMock "github.com/ArchibaldKronin/microservices_test/order/internal/repository/mocks"
+	txmanagerMock "github.com/ArchibaldKronin/microservices_test/order/internal/txManager/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -14,6 +15,7 @@ type ServiceSuite struct {
 
 	ctx context.Context //nolint: containedctx
 
+	txManager       *txmanagerMock.TxManager
 	orderRepository *orderMock.OrderRepository
 	paymentClient   *clientMocks.PaymentClient
 	inventoryClient *clientMocks.InventoryClient
@@ -24,11 +26,13 @@ type ServiceSuite struct {
 func (s *ServiceSuite) SetupTest() {
 	s.ctx = context.Background()
 
+	s.txManager = txmanagerMock.NewTxManager(s.T())
 	s.orderRepository = orderMock.NewOrderRepository(s.T())
+
 	s.paymentClient = clientMocks.NewPaymentClient(s.T())
 	s.inventoryClient = clientMocks.NewInventoryClient(s.T())
 
-	s.service = NewService(s.orderRepository, s.inventoryClient, s.paymentClient)
+	s.service = NewService(s.orderRepository, s.txManager, s.inventoryClient, s.paymentClient)
 }
 
 func (s *ServiceSuite) TearDownTest() {}

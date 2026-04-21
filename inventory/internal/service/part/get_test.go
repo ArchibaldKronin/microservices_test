@@ -37,7 +37,7 @@ func (s *ServiceSuite) TestGetSuccess() {
 				"is_certified": model.BoolValue{Value: true},
 			},
 			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			UpdatedAt: nil,
 		}
 	)
 

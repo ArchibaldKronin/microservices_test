@@ -28,6 +28,12 @@ post:
         application/json:
           schema:
             $ref: ../components/errors/internal_server_error.yaml
+    '503':
+      description: Service unavaliable
+      content:
+        application/json:
+          schema:
+           $ref: ../components/errors/service_unavailable_error.yaml  
     default:
       description: Unexpected error
       content:

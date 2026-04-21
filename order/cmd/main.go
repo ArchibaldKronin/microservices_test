@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -14,21 +15,28 @@ import (
 	api "github.com/ArchibaldKronin/microservices_test/order/internal/api/order/v1"
 	inventoryClient "github.com/ArchibaldKronin/microservices_test/order/internal/client/grpc/inventory/v1"
 	paymentClient "github.com/ArchibaldKronin/microservices_test/order/internal/client/grpc/payment/v1"
+	"github.com/ArchibaldKronin/microservices_test/order/internal/migrator"
 	repo "github.com/ArchibaldKronin/microservices_test/order/internal/repository/order"
 	service "github.com/ArchibaldKronin/microservices_test/order/internal/service/order"
+	txmanager "github.com/ArchibaldKronin/microservices_test/order/internal/txManager"
 	order_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
 	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
 	payment_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/payment/v1"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
-	httpPort          = "8080"
-	readHeaderTimeout = 5 * time.Second
-	shutdownTimeout   = 10 * time.Second
+	httpPort                 = "8080"
+	dbURI                    = "postgres://order-service-user:order-service-password@localhost:5432/order-service"
+	readHeaderTimeout        = 5 * time.Second
+	requestProcessingTimeout = 5 * time.Second
+	shutdownTimeout          = 10 * time.Second
+	migrationsDir            = "../migrations"
 )
 
 const (
@@ -71,10 +79,26 @@ func main() {
 	paymentClient := paymentClient.NewClient(generatedPaymentCl)
 	/////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////// SERVER
+	ctx := context.Background()
 
-	storage := repo.NewRepository()
+	pool, err := pgxpool.New(ctx, dbURI)
+	if err != nil {
+		slog.Error("failed to connect to database", "error", err)
+	}
+	defer pool.Close()
 
-	service := service.NewService(storage, inventoryClient, paymentClient)
+	migratorRunner := migrator.NewMigrator(stdlib.OpenDBFromPool(pool), migrationsDir)
+	err = migratorRunner.Up()
+	if err != nil {
+		slog.Error("databse migration error", "error ", err)
+		return
+	}
+
+	storage := repo.NewRepository(pool)
+
+	txManager := txmanager.NewTxRepoManager(pool)
+
+	service := service.NewService(storage, txManager, inventoryClient, paymentClient)
 
 	handler := api.NewApi(service)
 
@@ -87,7 +111,7 @@ func main() {
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(10 * time.Second))
+	r.Use(middleware.Timeout(requestProcessingTimeout))
 
 	r.Mount("/", orderServer)
 
@@ -113,10 +137,10 @@ func main() {
 
 	log.Println("🛑 Завершение работы сервера...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	ctxShutDown, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
-	err = server.Shutdown(ctx)
+	err = server.Shutdown(ctxShutDown)
 	if err != nil {
 		log.Printf("❌ Ошибка при остановке сервера: %v\n", err)
 	}

@@ -2,7 +2,10 @@ package order
 
 import (
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
+	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
+	repoModel "github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/stretchr/testify/mock"
 )
 
 func (s *ServiceSuite) TestPaySuccess() {
@@ -14,27 +17,37 @@ func (s *ServiceSuite) TestPaySuccess() {
 		transactionId = gofakeit.UUID()
 
 		order = &model.Order{
-			OrderId:     orderId,
-			UserId:      userId,
-			PartIds:     []string{partId},
-			Total_price: 42.2,
-			Status:      model.OrderStatusPENDINGPAYMENT,
+			OrderID:    orderId,
+			UserID:     userId,
+			PartIDs:    []string{partId},
+			TotalPrice: 42.2,
+			Status:     model.OrderStatusPENDINGPAYMENT,
 		}
 
 		orderUpdate = &model.Order{
-			OrderId:       orderId,
-			UserId:        userId,
-			PartIds:       []string{partId},
-			Total_price:   42.2,
+			OrderID:       orderId,
+			UserID:        userId,
+			PartIDs:       []string{partId},
+			TotalPrice:    42.2,
 			Status:        model.OrderStatusPAID,
 			TransactionID: &transactionId,
 			PaymentMethod: &paymentMethod,
 		}
 	)
 
-	s.orderRepository.EXPECT().GetOrder(s.ctx, orderId).Return(order).Once()
+	s.txManager.
+		On("WithTransaction", s.ctx, mock.Anything).
+		Run(func(args mock.Arguments) {
+			fn := args.Get(1).(func(repository.OrderRepository) error)
+
+			err := fn(s.orderRepository)
+			s.NoError(err)
+		}).
+		Return(nil).
+		Once()
+	s.orderRepository.EXPECT().GetOrder(s.ctx, orderId).Return(order, nil).Once()
 	s.paymentClient.EXPECT().PayOrder(s.ctx, userId, orderId, paymentMethod).Return(transactionId, nil).Once()
-	s.orderRepository.EXPECT().UpdateOrder(s.ctx, orderUpdate).Return(orderUpdate).Once()
+	s.orderRepository.EXPECT().UpdateOrder(s.ctx, orderUpdate).Return(nil).Once()
 
 	res, err := s.service.PayOrder(s.ctx, orderId, paymentMethod)
 
@@ -46,33 +59,22 @@ func (s *ServiceSuite) TestPaySuccess() {
 func (s *ServiceSuite) TestPayErrNotFoundGet() {
 	var (
 		orderId = gofakeit.UUID()
-		// userId        = gofakeit.UUID()
-		// partId        = gofakeit.UUID()
+
 		paymentMethod = model.PaymentMethodSBP
-		// transactionId = gofakeit.UUID()
-
-		// order = &model.Order{
-		// 	OrderId:     orderId,
-		// 	UserId:      userId,
-		// 	PartIds:     []string{partId},
-		// 	Total_price: 42.2,
-		// 	Status:      model.OrderStatusPENDINGPAYMENT,
-		// }
-
-		// orderUpdate = &model.Order{
-		// 	OrderId:       orderId,
-		// 	UserId:        userId,
-		// 	PartIds:       []string{partId},
-		// 	Total_price:   42.2,
-		// 	Status:        model.OrderStatusPAID,
-		// 	TransactionID: &transactionId,
-		// 	PaymentMethod: &paymentMethod,
-		// }
 	)
 
-	s.orderRepository.EXPECT().GetOrder(s.ctx, orderId).Return(nil).Once()
-	// s.paymentClient.EXPECT().PayOrder(s.ctx, userId, orderId, paymentMethod).Return(transactionId, nil).Once()
-	// s.orderRepository.EXPECT().UpdateOrder(s.ctx, orderUpdate).Return(orderUpdate).Once()
+	s.txManager.
+		On("WithTransaction", s.ctx, mock.Anything).
+		Run(func(args mock.Arguments) {
+			fn := args.Get(1).(func(repository.OrderRepository) error)
+
+			err := fn(s.orderRepository)
+			s.Error(err)
+			s.ErrorIs(err, model.ErrNotFound)
+		}).
+		Return(model.ErrNotFound).
+		Once()
+	s.orderRepository.EXPECT().GetOrder(s.ctx, orderId).Return(nil, repoModel.ErrNotFound).Once()
 
 	res, err := s.service.PayOrder(s.ctx, orderId, paymentMethod)
 
@@ -90,27 +92,38 @@ func (s *ServiceSuite) TestPayErrNotFoundUpdate() {
 		transactionId = gofakeit.UUID()
 
 		order = &model.Order{
-			OrderId:     orderId,
-			UserId:      userId,
-			PartIds:     []string{partId},
-			Total_price: 42.2,
-			Status:      model.OrderStatusPENDINGPAYMENT,
+			OrderID:    orderId,
+			UserID:     userId,
+			PartIDs:    []string{partId},
+			TotalPrice: 42.2,
+			Status:     model.OrderStatusPENDINGPAYMENT,
 		}
 
 		orderUpdate = &model.Order{
-			OrderId:       orderId,
-			UserId:        userId,
-			PartIds:       []string{partId},
-			Total_price:   42.2,
+			OrderID:       orderId,
+			UserID:        userId,
+			PartIDs:       []string{partId},
+			TotalPrice:    42.2,
 			Status:        model.OrderStatusPAID,
 			TransactionID: &transactionId,
 			PaymentMethod: &paymentMethod,
 		}
 	)
 
-	s.orderRepository.EXPECT().GetOrder(s.ctx, orderId).Return(order).Once()
+	s.txManager.
+		On("WithTransaction", s.ctx, mock.Anything).
+		Run(func(args mock.Arguments) {
+			fn := args.Get(1).(func(repository.OrderRepository) error)
+
+			err := fn(s.orderRepository)
+			s.Error(err)
+			s.ErrorIs(err, model.ErrNotFound)
+		}).
+		Return(model.ErrNotFound).
+		Once()
+	s.orderRepository.EXPECT().GetOrder(s.ctx, orderId).Return(order, nil).Once()
 	s.paymentClient.EXPECT().PayOrder(s.ctx, userId, orderId, paymentMethod).Return(transactionId, nil).Once()
-	s.orderRepository.EXPECT().UpdateOrder(s.ctx, orderUpdate).Return(nil).Once()
+	s.orderRepository.EXPECT().UpdateOrder(s.ctx, orderUpdate).Return(repoModel.ErrNotFound).Once()
 
 	res, err := s.service.PayOrder(s.ctx, orderId, paymentMethod)
 
@@ -127,15 +140,26 @@ func (s *ServiceSuite) TestPayErrInternal() {
 		paymentMethod = model.PaymentMethodSBP
 
 		order = &model.Order{
-			OrderId:     orderId,
-			UserId:      userId,
-			PartIds:     []string{partId},
-			Total_price: 42.2,
-			Status:      model.OrderStatusPENDINGPAYMENT,
+			OrderID:    orderId,
+			UserID:     userId,
+			PartIDs:    []string{partId},
+			TotalPrice: 42.2,
+			Status:     model.OrderStatusPENDINGPAYMENT,
 		}
 	)
 
-	s.orderRepository.EXPECT().GetOrder(s.ctx, orderId).Return(order).Once()
+	s.txManager.
+		On("WithTransaction", s.ctx, mock.Anything).
+		Run(func(args mock.Arguments) {
+			fn := args.Get(1).(func(repository.OrderRepository) error)
+
+			err := fn(s.orderRepository)
+			s.Error(err)
+			s.ErrorIs(err, model.ErrInternal)
+		}).
+		Return(model.ErrInternal).
+		Once()
+	s.orderRepository.EXPECT().GetOrder(s.ctx, orderId).Return(order, nil).Once()
 	s.paymentClient.EXPECT().PayOrder(s.ctx, userId, orderId, paymentMethod).Return("", model.ErrInternal).Once()
 
 	res, err := s.service.PayOrder(s.ctx, orderId, paymentMethod)

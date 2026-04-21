@@ -21,6 +21,11 @@ func (a *api) CreateOrder(ctx context.Context, req *order_v1.CreateOrderRequest)
 				Code:    404,
 				Message: "some parts not found",
 			}, nil
+		case errors.Is(err, model.ErrUnavailable):
+			return &order_v1.ServiceUnavailableError{
+				Code:    503,
+				Message: "create order error: unavailable",
+			}, nil
 		default:
 			log.Printf("create order failed: %v\n", err)
 			return &order_v1.InternalServerError{
@@ -30,7 +35,7 @@ func (a *api) CreateOrder(ctx context.Context, req *order_v1.CreateOrderRequest)
 		}
 	}
 
-	orderId, err := uuid.Parse(order.OrderId)
+	orderId, err := uuid.Parse(order.OrderID)
 	if err != nil {
 		log.Printf("ошибка парсинга uuid: %v\n", err)
 		return &order_v1.InternalServerError{
@@ -41,7 +46,7 @@ func (a *api) CreateOrder(ctx context.Context, req *order_v1.CreateOrderRequest)
 
 	resp := order_v1.CreateOrderResponse{
 		OrderUUID:  orderId,
-		TotalPrice: float32(order.Total_price),
+		TotalPrice: float32(order.TotalPrice),
 	}
 
 	return &resp, nil

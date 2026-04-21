@@ -29,7 +29,7 @@ func (a *api) PayOrderByUUID(ctx context.Context, req *order_v1.PayOrderRequest,
 				Message: "internal server error",
 			}, nil
 		case errors.Is(err, model.ErrUnavailable):
-			return &order_v1.InternalServerError{
+			return &order_v1.ServiceUnavailableError{
 				Code:    503,
 				Message: "pay order error: unavailable",
 			}, nil

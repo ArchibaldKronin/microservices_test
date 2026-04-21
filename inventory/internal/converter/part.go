@@ -26,7 +26,7 @@ func PartToProto(p *model.Part) *inventory_v1.Part {
 		Manufacturer:  &manufacturerProto,
 		Tags:          p.Tags,
 		Metadata:      metadataProto,
-		CreatedAt:     TimeToProto(p.CreatedAt),
+		CreatedAt:     TimeToProto(&p.CreatedAt),
 		UpdatedAt:     TimeToProto(p.UpdatedAt),
 	}
 }

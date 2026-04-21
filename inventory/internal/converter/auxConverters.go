@@ -86,8 +86,11 @@ func ValueToProto(val model.Value) *inventory_v1.Value {
 	}
 }
 
-func TimeToProto(t time.Time) *timestamppb.Timestamp {
-	return timestamppb.New(t)
+func TimeToProto(t *time.Time) *timestamppb.Timestamp {
+	if t == nil {
+		return nil
+	}
+	return timestamppb.New(*t)
 }
 
 func FilterToDomain(f *inventory_v1.PartsFilter) *model.PartsFilter {
