@@ -1,0 +1,55 @@
+# ============================
+# Stage 1: Build stage
+# ============================
+FROM golang:1.26.2-alpine3.22 AS builder
+
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+COPY go.work go.work.sum ./
+
+COPY platform/go.mod platform/go.sum ./platform/
+COPY shared/go.mod shared/go.sum ./shared/
+COPY order/go.mod order/go.sum ./order/
+COPY inventory/go.mod inventory/go.sum ./inventory/
+COPY payment/go.mod payment/go.sum ./payment/
+
+RUN go mod download
+
+COPY platform ./platform
+COPY shared ./shared
+COPY order ./order
+COPY inventory ./inventory
+COPY payment ./payment
+
+COPY bin/grpc-health-probe ./
+# ADD https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.37/grpc_health_probe-linux-amd64 ./grpc-health-probe
+
+RUN chmod +x grpc-health-probe
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app-inventory ./inventory/cmd/main.go
+
+
+# ============================
+# Stage 2: Final image
+# ============================
+
+FROM alpine:3.22
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+USER appuser
+
+COPY --from=builder /app/app-inventory .
+
+COPY --from=builder /app/grpc-health-probe /bin/grpc-health-probe
+
+EXPOSE 50051
+
+HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD grpc-health-probe -addr=localhost:50051 || exit 1
+
+# ENTRYPOINT ["sh", "-c", "sleep 999999"]
+ENTRYPOINT [ "./app-inventory" ]

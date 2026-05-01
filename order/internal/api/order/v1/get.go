@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/converter"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
@@ -27,7 +26,6 @@ func (a *api) GetOrderByUUID(ctx context.Context, params order_v1.GetOrderByUUID
 				Message: "get order error: unavailable",
 			}, nil
 		default:
-			log.Printf("get order failed: %v\n", err)
 			return &order_v1.InternalServerError{
 				Code:    500,
 				Message: "internal server error",
@@ -36,8 +34,6 @@ func (a *api) GetOrderByUUID(ctx context.Context, params order_v1.GetOrderByUUID
 	}
 	orderDTO, err := converter.OrderToDTO(order)
 	if err != nil {
-		log.Printf("order convertion failed: %v\n", err)
-
 		return &order_v1.InternalServerError{
 			Code:    500,
 			Message: "internal server error",

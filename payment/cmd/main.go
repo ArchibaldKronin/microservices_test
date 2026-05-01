@@ -3,80 +3,52 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
-	"net"
-	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	paymentV1 "github.com/ArchibaldKronin/microservices_test/payment/internal/api/payment/v1"
-	paymentService "github.com/ArchibaldKronin/microservices_test/payment/internal/service/payment"
-	payment_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/payment/v1"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"github.com/ArchibaldKronin/microservices_test/payment/internal/app"
+	"github.com/ArchibaldKronin/microservices_test/payment/internal/config"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"go.uber.org/zap"
 )
 
-const grpcPort = 50052
+func gracefulShutdown() {
+	ctx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
+	defer cancel()
 
-func main() {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
-	if err != nil {
-		log.Fatalf("failed to listen: %v\n", err)
+	if err := closer.CloseAll(ctx); err != nil {
+		logger.Error(ctx, "error shutting down", zap.Error(err))
 	}
-	defer func() {
-		if cerr := lis.Close(); cerr != nil {
-			log.Printf("failed to close listener: %v\n", cerr)
-		}
-	}()
-
-	server := grpc.NewServer(
-		grpc.UnaryInterceptor(
-			grpc.UnaryServerInterceptor(LoggerUUID()),
-		),
-	)
-
-	// Регистрация сервера
-	service := paymentService.NewService()
-	api := paymentV1.NewAPI(service)
-
-	payment_v1.RegisterPaymentServiceServer(server, api)
-
-	reflection.Register(server)
-
-	go func() {
-		log.Printf("🚀 gRPC Payment server listening on %d\n", grpcPort)
-		err := server.Serve(lis)
-		if err != nil {
-			log.Printf("failed to serve Payment: %v\n", err)
-			return
-		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("🛑 Shutting down gRPC Payment server...")
-	server.GracefulStop()
-	log.Println("✅ Payment server stopped")
 }
 
-func LoggerUUID() grpc.UnaryServerInterceptor {
-	return func(
-		ctx context.Context,
-		req any,
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,
-	) (any, error) {
-		resp, err := handler(ctx, req)
-		if err != nil {
-			return resp, err
-		}
+// const grpcPort = 50052
+const (
+	configPath = "../deploy/compose/payment/.env"
+)
 
-		if info.FullMethod == "/payment.v1.PaymentService/PayOrder" {
-			if v, ok := resp.(*payment_v1.PayOrderResponse); ok {
-				log.Printf("transaction UUID: %s", v.TransactionUuid)
-			}
-		}
-		return resp, err
+func main() {
+	err := config.Load(configPath)
+	if err != nil {
+		panic(fmt.Errorf("failed to load config: %w", err))
+	}
+
+	appCtx, appCancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer appCancel()
+	defer gracefulShutdown()
+
+	closer.Configure(syscall.SIGINT, syscall.SIGTERM)
+
+	app, err := app.New(appCtx)
+	if err != nil {
+		logger.Error(appCtx, "❌ Не удалось создать приложение", zap.Error(err))
+		return
+	}
+
+	err = app.Run(appCtx)
+	if err != nil {
+		logger.Error(appCtx, "❌ шибка при работе приложения", zap.Error(err))
+		return
 	}
 }

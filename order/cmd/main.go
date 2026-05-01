@@ -2,148 +2,70 @@ package main
 
 import (
 	"context"
-	"errors"
-	"log"
-	"log/slog"
-	"net"
-	"net/http"
-	"os"
+	"fmt"
 	"os/signal"
 	"syscall"
 	"time"
 
-	api "github.com/ArchibaldKronin/microservices_test/order/internal/api/order/v1"
-	inventoryClient "github.com/ArchibaldKronin/microservices_test/order/internal/client/grpc/inventory/v1"
-	paymentClient "github.com/ArchibaldKronin/microservices_test/order/internal/client/grpc/payment/v1"
-	"github.com/ArchibaldKronin/microservices_test/order/internal/migrator"
-	repo "github.com/ArchibaldKronin/microservices_test/order/internal/repository/order"
-	service "github.com/ArchibaldKronin/microservices_test/order/internal/service/order"
-	txmanager "github.com/ArchibaldKronin/microservices_test/order/internal/txManager"
-	order_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
-	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
-	payment_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/payment/v1"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/ArchibaldKronin/microservices_test/order/internal/app"
+	"github.com/ArchibaldKronin/microservices_test/order/internal/config"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"go.uber.org/zap"
 )
 
 const (
-	httpPort                 = "8080"
-	dbURI                    = "postgres://order-service-user:order-service-password@localhost:5432/order-service"
-	readHeaderTimeout        = 5 * time.Second
-	requestProcessingTimeout = 5 * time.Second
-	shutdownTimeout          = 10 * time.Second
-	migrationsDir            = "../migrations"
+	// httpPort                 = "8080"
+	// dbURI                    = "postgres://order-service-user:order-service-password@localhost:5432/order-service"
+	// readHeaderTimeout        = 5 * time.Second
+	// requestProcessingTimeout = 10 * time.Second
+	// shutdownTimeout          = 10 * time.Second
+	// migrationsDir            = "./migrations"
+	configPath = "../deploy/compose/order/.env"
 )
 
 const (
-	serverInventoryAddress = "localhost:50051"
-	serverPaymentAddress   = "localhost:50052"
+// serverInventoryAddress = "localhost:50051"
+// serverPaymentAddress   = "localhost:50052"
 )
 
 func main() {
-	/////////////////////////////////////////////////////////////////////// CLIENTS
-	connInventory, err := grpc.NewClient(
-		serverInventoryAddress,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	err := config.Load(configPath)
+	if err != nil {
+		panic(fmt.Errorf("failed to load config: %w", err))
+	}
+
+	appCtx, appCancel := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT,
+		syscall.SIGTERM,
 	)
-	if err != nil {
-		log.Printf("ошибка соединения с Inventory: %v", err)
-	}
-	defer func() {
-		if cerr := connInventory.Close(); cerr != nil {
-			log.Printf("failed to close connect to Inventory: %v", cerr)
-		}
-	}()
+	defer appCancel()
+	defer gracefulShutdown()
 
-	generatedInventoryCl := inventory_v1.NewInventoryServiceClient(connInventory)
-	inventoryClient := inventoryClient.NewClient(generatedInventoryCl)
-
-	connPayment, err := grpc.NewClient(
-		serverPaymentAddress,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	closer.Configure(
+		syscall.SIGINT,
+		syscall.SIGTERM,
 	)
-	if err != nil {
-		log.Printf("ошибка соединения с Payment: %v", err)
-	}
-	defer func() {
-		if cerr := connPayment.Close(); cerr != nil {
-			log.Printf("failed to close connect to Payment: %v", cerr)
-		}
-	}()
 
-	generatedPaymentCl := payment_v1.NewPaymentServiceClient(connPayment)
-	paymentClient := paymentClient.NewClient(generatedPaymentCl)
-	/////////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////////// SERVER
-	ctx := context.Background()
-
-	pool, err := pgxpool.New(ctx, dbURI)
+	app, err := app.New(appCtx)
 	if err != nil {
-		slog.Error("failed to connect to database", "error", err)
-	}
-	defer pool.Close()
-
-	migratorRunner := migrator.NewMigrator(stdlib.OpenDBFromPool(pool), migrationsDir)
-	err = migratorRunner.Up()
-	if err != nil {
-		slog.Error("databse migration error", "error ", err)
+		logger.Error(appCtx, "❌ Не удалось создать приложение", zap.Error(err))
 		return
 	}
 
-	storage := repo.NewRepository(pool)
-
-	txManager := txmanager.NewTxRepoManager(pool)
-
-	service := service.NewService(storage, txManager, inventoryClient, paymentClient)
-
-	handler := api.NewApi(service)
-
-	orderServer, err := order_v1.NewServer(handler)
+	err = app.Run(appCtx)
 	if err != nil {
-		log.Printf("ошибка создания Order сервера OpenAPI: %v", err)
+		logger.Error(appCtx, "❌ Ошибка при работе приложения", zap.Error(err))
+		return
 	}
+}
 
-	r := chi.NewRouter()
-
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(requestProcessingTimeout))
-
-	r.Mount("/", orderServer)
-
-	server := &http.Server{
-		Addr:              net.JoinHostPort("localhost", httpPort),
-		Handler:           r,
-		ReadHeaderTimeout: readHeaderTimeout,
-	}
-
-	go func() {
-		///////////////////////////
-		log.Printf("🚀 HTTP-сервер запущен на порту %s\n", httpPort)
-		///////////////////////////
-		err = server.ListenAndServe()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Printf("❌ Ошибка запуска сервера: %v\n", err)
-		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	log.Println("🛑 Завершение работы сервера...")
-
-	ctxShutDown, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+func gracefulShutdown() {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	err = server.Shutdown(ctxShutDown)
-	if err != nil {
-		log.Printf("❌ Ошибка при остановке сервера: %v\n", err)
+	if err := closer.CloseAll(ctx); err != nil {
+		logger.Error(ctx, "error shutting down", zap.Error(err))
 	}
-
-	log.Println("✅ Сервер остановлен")
 }

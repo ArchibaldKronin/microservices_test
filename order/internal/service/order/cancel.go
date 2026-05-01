@@ -3,18 +3,19 @@ package order
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	repoModel "github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"go.uber.org/zap"
 )
 
 func (s *service) CancelOrder(ctx context.Context, orderId string) error {
 	err := s.txManager.WithTransaction(ctx, func(executer repository.OrderRepository) error {
 		order, err := executer.GetOrder(ctx, orderId)
 		if err != nil {
-			slog.Error("error getting order", "error", err)
+			logger.Error(ctx, "error getting order", zap.String("id", orderId), zap.Error(err))
 
 			if errors.Is(err, repoModel.ErrNotFound) {
 				return model.ErrNotFound
@@ -28,10 +29,12 @@ func (s *service) CancelOrder(ctx context.Context, orderId string) error {
 			err = executer.UpdateOrder(ctx, order)
 			if err != nil {
 				if errors.Is(err, repoModel.ErrNotFound) {
-					slog.Error("error NON CONSISTENT DATA", "error", err)
+					logger.Error(ctx, "error NON CONSISTENT DATA", zap.String("id", orderId), zap.Error(err))
+
 					return model.ErrNotFound
 				} else {
-					slog.Error("error updating order", "error", err)
+					logger.Error(ctx, "error updating order", zap.String("id", orderId), zap.Error(err))
+
 					return model.ErrInternal
 				}
 			}

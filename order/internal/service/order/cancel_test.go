@@ -4,6 +4,7 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	repoModel "github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/mock"
 )
@@ -50,6 +51,8 @@ func (s *ServiceSuite) TestCancelSuccess() {
 }
 
 func (s *ServiceSuite) TestCancelErrNotFoundGet() {
+	logger.SetNopLogger()
+
 	orderId := gofakeit.UUID()
 
 	s.txManager.
@@ -73,6 +76,8 @@ func (s *ServiceSuite) TestCancelErrNotFoundGet() {
 }
 
 func (s *ServiceSuite) TestCancelErrNotFoundUpdate() {
+	logger.SetNopLogger()
+
 	var (
 		orderId = gofakeit.UUID()
 		userId  = gofakeit.UUID()
@@ -115,6 +120,8 @@ func (s *ServiceSuite) TestCancelErrNotFoundUpdate() {
 }
 
 func (s *ServiceSuite) TestCancelErrOrderAlreadyPaid() {
+	logger.SetNopLogger()
+
 	var (
 		orderId = gofakeit.UUID()
 		order   = &model.Order{

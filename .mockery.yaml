@@ -17,6 +17,10 @@ packages:
   github.com/ArchibaldKronin/microservices_test/inventory/internal/repository:
     config:
       include-regex: ".*Repository"
+  github.com/ArchibaldKronin/microservices_test/inventory/internal/config:
+    config:
+      all: true
+
 # order
   github.com/ArchibaldKronin/microservices_test/order/internal/service:
     config:
@@ -33,8 +37,16 @@ packages:
   github.com/ArchibaldKronin/microservices_test/order/internal/client/grpc:
     config:
       include-regex: ".*Client"
+
+  github.com/ArchibaldKronin/microservices_test/order/internal/config:
+    config:
+      all: true
 # payment
   github.com/ArchibaldKronin/microservices_test/payment/internal/service:
     config:
       include-regex: ".*Service"
+  
+  github.com/ArchibaldKronin/microservices_test/payment/internal/config:
+    config:
+      all: true
 

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"testing"
 
 	"github.com/ArchibaldKronin/microservices_test/payment/internal/service/mocks"
 	"github.com/stretchr/testify/suite"
@@ -23,4 +24,8 @@ func (a *ApiSuite) SetupTest() {
 	a.paymentService = *mocks.NewPaymentService(a.T())
 
 	a.api = NewAPI(&a.paymentService)
+}
+
+func TestApiSuite(t *testing.T) {
+	suite.Run(t, new(ApiSuite))
 }

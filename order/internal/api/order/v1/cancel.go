@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	order_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
@@ -31,7 +30,6 @@ func (a *api) CancelOrderByUUID(ctx context.Context, params order_v1.CancelOrder
 				Message: "cancel order error: unavailable",
 			}, nil
 		default:
-			log.Printf("cancel order failed: %v\n", err)
 			return &order_v1.InternalServerError{
 				Code:    500,
 				Message: "internal server error",

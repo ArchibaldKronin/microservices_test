@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/ArchibaldKronin/microservices_test/inventory/internal/model"
 	repoModel "github.com/ArchibaldKronin/microservices_test/inventory/internal/repository/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"go.uber.org/zap"
 )
 
 func (s *service) GetPart(ctx context.Context, id string) (*model.Part, error) {
@@ -19,7 +20,12 @@ func (s *service) GetPart(ctx context.Context, id string) (*model.Part, error) {
 
 		var errConv *repoModel.MetadataParseValueError
 		if errors.As(err, &errConv) && part != nil {
-			slog.Warn("error converting Value type", "metadata_value", errConv.Value, "error", err)
+			logger.Warn(
+				ctx,
+				"error converting Value type",
+				zap.Any("metadata_value", errConv.Value),
+				zap.Error(err),
+			)
 			return part, nil
 		}
 

@@ -4,6 +4,7 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	repoModel "github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/mock"
 )
@@ -57,6 +58,8 @@ func (s *ServiceSuite) TestPaySuccess() {
 }
 
 func (s *ServiceSuite) TestPayErrNotFoundGet() {
+	logger.SetNopLogger()
+
 	var (
 		orderId = gofakeit.UUID()
 
@@ -84,6 +87,8 @@ func (s *ServiceSuite) TestPayErrNotFoundGet() {
 }
 
 func (s *ServiceSuite) TestPayErrNotFoundUpdate() {
+	logger.SetNopLogger()
+
 	var (
 		orderId       = gofakeit.UUID()
 		userId        = gofakeit.UUID()
@@ -133,6 +138,8 @@ func (s *ServiceSuite) TestPayErrNotFoundUpdate() {
 }
 
 func (s *ServiceSuite) TestPayErrInternal() {
+	logger.SetNopLogger()
+
 	var (
 		orderId       = gofakeit.UUID()
 		userId        = gofakeit.UUID()

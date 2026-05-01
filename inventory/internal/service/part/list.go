@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/ArchibaldKronin/microservices_test/inventory/internal/model"
 	repoModel "github.com/ArchibaldKronin/microservices_test/inventory/internal/repository/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"go.uber.org/zap"
 )
 
 func (s *service) ListParts(ctx context.Context, filter *model.PartsFilter) ([]*model.Part, error) {
@@ -19,11 +20,16 @@ func (s *service) ListParts(ctx context.Context, filter *model.PartsFilter) ([]*
 
 		var errConv *repoModel.MetadataParseValueError
 		if errors.As(err, &errConv) && parts != nil {
-			slog.Warn("error converting Value type", "metadata_value", errConv.Value, "error", err)
+			logger.Warn(
+				ctx,
+				"error converting Value type",
+				zap.Any("metadata_value", errConv.Value),
+				zap.Error(err),
+			)
 			return parts, nil
 		}
 
-		slog.Warn("error listing parts", "error_data", err)
+		logger.Warn(ctx, "error listing parts", zap.Error(err))
 		return nil, fmt.Errorf("error list parts service :%w", model.ErrUnexpected)
 	}
 

@@ -3,17 +3,21 @@ package v1
 import (
 	"context"
 	"errors"
-	"log"
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/converter"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	order_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 func (a *api) CreateOrder(ctx context.Context, req *order_v1.CreateOrderRequest) (order_v1.CreateOrderRes, error) {
+	ctx = logger.WithUserID(ctx, req.UserUUID.String())
+
 	partIds := converter.UUIDsToString(req.PartUuids)
 	order, err := a.orderService.CreateOrder(ctx, req.UserUUID.String(), partIds)
+	logger.Info(ctx, "Успешно создан заказ", zap.String("ID", order.OrderID))
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrNotFound):
@@ -27,7 +31,6 @@ func (a *api) CreateOrder(ctx context.Context, req *order_v1.CreateOrderRequest)
 				Message: "create order error: unavailable",
 			}, nil
 		default:
-			log.Printf("create order failed: %v\n", err)
 			return &order_v1.InternalServerError{
 				Code:    500,
 				Message: "internal server error",
@@ -37,7 +40,6 @@ func (a *api) CreateOrder(ctx context.Context, req *order_v1.CreateOrderRequest)
 
 	orderId, err := uuid.Parse(order.OrderID)
 	if err != nil {
-		log.Printf("ошибка парсинга uuid: %v\n", err)
 		return &order_v1.InternalServerError{
 			Code:    500,
 			Message: "internal server error",
