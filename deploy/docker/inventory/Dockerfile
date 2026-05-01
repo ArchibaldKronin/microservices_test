@@ -23,8 +23,8 @@ COPY order ./order
 COPY inventory ./inventory
 COPY payment ./payment
 
-COPY bin/grpc-health-probe ./
-# ADD https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.37/grpc_health_probe-linux-amd64 ./grpc-health-probe
+# COPY bin/grpc-health-probe ./
+ADD https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.37/grpc_health_probe-linux-amd64 ./grpc-health-probe
 
 RUN chmod +x grpc-health-probe
 
