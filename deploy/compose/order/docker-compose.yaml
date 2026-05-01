@@ -1,23 +1,21 @@
 services:
   postgres-order:
-    image: postgres:15
+    image: postgres:17.0-alpine3.20
 
     container_name: postgres-inventory
 
-    environment:
-      POSTGRES_DB: order-service
-      POSTGRES_USER: order-service-user
-      POSTGRES_PASSWORD: order-service-password
-
+    env_file:
+      - .env
+    
     ports:
-      - 5432:5432
+      - ${EXTERNAL_POSTGRES_PORT}:5432
 
     volumes:
       - postgres_order_data:/var/lib/postgresql/data
 
     healthcheck:
         test: [
-          "CMD-SHELL", "pg_isready -U order-service-user -d order-service"
+          "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
         ]
         interval: 10s
         timeout: 5s

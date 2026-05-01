@@ -3,11 +3,12 @@ package order
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	repoModel "github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"go.uber.org/zap"
 )
 
 func (s *service) PayOrder(ctx context.Context, orderId string, pm model.PaymentMethod) (string, error) {
@@ -16,7 +17,7 @@ func (s *service) PayOrder(ctx context.Context, orderId string, pm model.Payment
 	err := s.txManager.WithTransaction(ctx, func(executer repository.OrderRepository) error {
 		order, err := executer.GetOrder(ctx, orderId)
 		if err != nil {
-			slog.Error("error getting order", "error", err)
+			logger.Error(ctx, "error getting order", zap.String("id", orderId), zap.Error(err))
 
 			if errors.Is(err, repoModel.ErrNotFound) {
 				return model.ErrNotFound
@@ -27,7 +28,7 @@ func (s *service) PayOrder(ctx context.Context, orderId string, pm model.Payment
 		userId := order.UserID
 		transId, err := s.paymentClient.PayOrder(ctx, userId, orderId, pm)
 		if err != nil {
-			slog.Error("error payment", "error", err)
+			logger.Error(ctx, "error paying order", zap.String("id", orderId), zap.String("payment_method", string(pm)), zap.Error(err))
 			return err
 		}
 
@@ -38,10 +39,10 @@ func (s *service) PayOrder(ctx context.Context, orderId string, pm model.Payment
 		err = executer.UpdateOrder(ctx, order)
 		if err != nil {
 			if errors.Is(err, repoModel.ErrNotFound) {
-				slog.Error("error NON CONSISTENT DATA", "error", err)
+				logger.Error(ctx, "error NON CONSISTENT DATA", zap.String("id", orderId), zap.Error(err))
 				return model.ErrNotFound
 			} else {
-				slog.Error("error updating order", "error", err)
+				logger.Error(ctx, "eerror updating order", zap.String("id", orderId), zap.Error(err))
 				return model.ErrInternal
 			}
 		}

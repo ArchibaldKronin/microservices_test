@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/mock"
@@ -60,6 +61,8 @@ func (s *ServiceSuite) TestGetPartsInfoSuccess() {
 }
 
 func (s *ServiceSuite) TestGetPartsErrInvalidArgumentListParts() {
+	logger.SetNopLogger()
+
 	var (
 		partId  = gofakeit.UUID()
 		partsId = []string{partId}
@@ -82,6 +85,8 @@ func (s *ServiceSuite) TestGetPartsErrInvalidArgumentListParts() {
 }
 
 func (s *ServiceSuite) TestGetPartsErrInternalListParts() {
+	logger.SetNopLogger()
+
 	var (
 		partId  = gofakeit.UUID()
 		partsId = []string{partId}
@@ -104,6 +109,8 @@ func (s *ServiceSuite) TestGetPartsErrInternalListParts() {
 }
 
 func (s *ServiceSuite) TestGetPartsErrNotFound() {
+	logger.SetNopLogger()
+
 	var (
 		partId1 = gofakeit.UUID()
 		partId2 = gofakeit.UUID()
@@ -158,6 +165,8 @@ func (s *ServiceSuite) TestGetPartsErrNotFound() {
 }
 
 func (s *ServiceSuite) TestCreateSuccess() {
+	logger.SetNopLogger()
+
 	var (
 		partId  = gofakeit.UUID()
 		partsId = []string{partId}
@@ -215,6 +224,8 @@ func (s *ServiceSuite) TestCreateSuccess() {
 }
 
 func (s *ServiceSuite) TestCreateErrInvalidArgument() {
+	logger.SetNopLogger()
+
 	var (
 		userId = gofakeit.UUID()
 
@@ -238,6 +249,8 @@ func (s *ServiceSuite) TestCreateErrInvalidArgument() {
 }
 
 func (s *ServiceSuite) TestCreateErrInternal() {
+	logger.SetNopLogger()
+
 	var (
 		userId = gofakeit.UUID()
 
@@ -261,6 +274,8 @@ func (s *ServiceSuite) TestCreateErrInternal() {
 }
 
 func (s *ServiceSuite) TestCreateErrNotFound() {
+	logger.SetNopLogger()
+
 	var (
 		userId = gofakeit.UUID()
 

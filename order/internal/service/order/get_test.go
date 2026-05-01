@@ -3,6 +3,7 @@ package order
 import (
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	repoModel "github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	"github.com/brianvoe/gofakeit/v7"
 )
 
@@ -27,6 +28,8 @@ func (s *ServiceSuite) TestGetSuccess() {
 }
 
 func (s *ServiceSuite) TestGetErrNotFound() {
+	logger.SetNopLogger()
+
 	var (
 		orderId = gofakeit.UUID()
 
@@ -43,6 +46,8 @@ func (s *ServiceSuite) TestGetErrNotFound() {
 }
 
 func (s *ServiceSuite) TestGetErrInternal() {
+	logger.SetNopLogger()
+
 	var (
 		orderId = gofakeit.UUID()
 

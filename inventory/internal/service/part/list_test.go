@@ -5,9 +5,12 @@ import (
 	"time"
 
 	"github.com/ArchibaldKronin/microservices_test/inventory/internal/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 )
 
 func (s *ServiceSuite) TestListParts() {
+	logger.SetNopLogger()
+
 	var (
 		parts = []*model.Part{
 			{

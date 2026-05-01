@@ -3,84 +3,63 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
-	"net"
-	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	inventoryV1API "github.com/ArchibaldKronin/microservices_test/inventory/internal/api/inventory/v1"
-	inventoryRepo "github.com/ArchibaldKronin/microservices_test/inventory/internal/repository/part"
-	inventoryService "github.com/ArchibaldKronin/microservices_test/inventory/internal/service/part"
-	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"github.com/ArchibaldKronin/microservices_test/inventory/internal/app"
+	"github.com/ArchibaldKronin/microservices_test/inventory/internal/config"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"go.uber.org/zap"
 )
 
 const (
-	grpcPort = 50051
-	dbURI    = "mongodb://inventory-service-user:inventory-service-password@localhost:27017/inventory-service?authSource=admin"
+	// grpcPort = 50051
+	// dbURI    = "mongodb://inventory-service-user:inventory-service-password@localhost:27017/inventory-service?authSource=admin"
+	configPath = "../deploy/compose/inventory/.env"
 )
 
 func main() {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
+	err := config.Load(configPath)
 	if err != nil {
-		log.Fatalf("failed to listen: %v\n", err)
-		return
+		panic(fmt.Errorf("failed to load config: %w", err))
 	}
-	defer func() {
-		if cerr := lis.Close(); cerr != nil {
-			log.Printf("failed to close listenner: %v\n", cerr)
-		}
-	}()
 
-	s := grpc.NewServer()
+	appCtx, appCancel := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
+	defer appCancel()
+	defer gracefulShutdown()
 
-	// repo := inventoryRepo.NewRepository(inventoryRepo.InitialParts)
-	ctx := context.Background()
-	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(dbURI))
+	closer.Configure(
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
+
+	initCtx, initCancel := context.WithTimeout(appCtx, 5*time.Second)
+	defer initCancel()
+
+	app, err := app.New(initCtx)
 	if err != nil {
-		log.Printf("failed to conncet to DB: %v\n", err)
-		return
-	}
-	defer func() {
-		cerr := mongoClient.Disconnect(ctx)
-		if cerr != nil {
-			log.Printf("failed to disconnect BD: %v\n", cerr)
-		}
-	}()
-
-	err = mongoClient.Ping(ctx, nil)
-	if err != nil {
-		log.Printf("failed to ping DB: %v\n", err)
+		logger.Error(appCtx, "❌ Не удалось создать приложение", zap.Error(err))
 		return
 	}
 
-	db := mongoClient.Database("inventory-service")
+	err = app.Run(appCtx)
+	if err != nil {
+		logger.Error(appCtx, "❌ Ошибка при работе приложения", zap.Error(err))
+		return
+	}
+}
 
-	repo, err := inventoryRepo.NewRepository(db)
-	service := inventoryService.NewService(repo)
-	api := inventoryV1API.NewApi(service)
+func gracefulShutdown() {
+	ctx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
+	defer cancel()
 
-	inventory_v1.RegisterInventoryServiceServer(s, api)
-
-	reflection.Register(s)
-
-	go func() {
-		log.Printf("🚀 gRPC Inventory server listening on %d\n", grpcPort)
-		err = s.Serve(lis)
-		if err != nil {
-			log.Printf("failed to serve Inventory: %v\n", err)
-			return
-		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("🛑 Shutting down gRPC Inventory server...")
-	s.GracefulStop()
-	log.Println("✅ Inventory server stopped")
+	if err := closer.CloseAll(ctx); err != nil {
+		logger.Error(ctx, "error shutting down", zap.Error(err))
+	}
 }

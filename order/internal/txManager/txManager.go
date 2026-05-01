@@ -3,16 +3,15 @@ package txmanager
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository/order"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
 )
-
-// type callBackFunc func(executer repository.OrderRepository) error
 
 type TxManager interface {
 	WithTransaction(ctx context.Context, fn func(executer repository.OrderRepository) error) error
@@ -34,14 +33,15 @@ func NewTxRepoManager(pool *pgxpool.Pool) *txRepoManager {
 func (m *txRepoManager) WithTransaction(ctx context.Context, fn func(executer repository.OrderRepository) error) error {
 	tx, err := m.pgRepo.Begin(ctx)
 	if err != nil {
-		slog.Error("error beginning tx", "error", err)
+		logger.Error(ctx, "error beginning tx", zap.Error(err))
+
 		return model.ErrInternal
 	}
 
 	defer func() {
 		rerr := tx.Rollback(ctx)
 		if rerr != nil && !errors.Is(rerr, pgx.ErrTxClosed) {
-			slog.Warn("rallback failed", "error", rerr)
+			logger.Error(ctx, "rallback failed", zap.Error(err))
 		}
 	}()
 
@@ -54,20 +54,9 @@ func (m *txRepoManager) WithTransaction(ctx context.Context, fn func(executer re
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		slog.Error("error committing tx:", "error", err)
+		logger.Error(ctx, "error committing tx", zap.Error(err))
 		return model.ErrInternal
 	}
 
 	return nil
 }
-
-// func (m *txRepoManager) WithoutTransaction(ctx context.Context, fn callBackFunc) error {
-// 	exec := order.NewRepository(m.pgRepo)
-
-// 	err := fn(exec)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }

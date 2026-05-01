@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ArchibaldKronin/microservices_test/payment/internal/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	payment_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/payment/v1"
 	"github.com/brianvoe/gofakeit/v7"
 	"google.golang.org/grpc/codes"
@@ -32,6 +33,8 @@ func (a *ApiSuite) TestPaySuccess() {
 }
 
 func (a *ApiSuite) TestPayErrGeneric() {
+	logger.SetNopLogger()
+
 	var (
 		userId        = gofakeit.UUID()
 		paymentMethod = model.PaymentMethodCreditCard

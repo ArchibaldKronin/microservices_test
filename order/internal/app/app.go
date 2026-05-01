@@ -1,0 +1,251 @@
+package app
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/ArchibaldKronin/microservices_test/order/internal/api/health"
+	"github.com/ArchibaldKronin/microservices_test/order/internal/config"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	pgMigrator "github.com/ArchibaldKronin/microservices_test/platform/pkg/migrator/pg"
+	order_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/stdlib"
+	"go.uber.org/zap"
+)
+
+// закрывать клиент инвентори
+// закрывать клиент пэймент
+// закрывать pgpool
+// init migrator
+const (
+	requestProcessingTimeout = 10 * time.Second
+	shutdownTimeout          = 5 * time.Second
+)
+
+type App struct {
+	diContainer *diContainer
+	orderServer *order_v1.Server
+	httpServer  *http.Server
+}
+
+func New(ctx context.Context) (*App, error) {
+	a := &App{}
+
+	err := a.initDeps(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return a, nil
+}
+
+func (a *App) Run(ctx context.Context) error {
+	return a.runHTTPServer(ctx)
+}
+
+func (a *App) initDeps(ctx context.Context) error {
+	inits := []func(context.Context) error{
+		a.initDi,
+		a.initLogger,
+		a.initCloser,
+		a.initPg,
+		a.initMigrator,
+		a.initInventoryConnection,
+		a.initPaymentConnection,
+		a.initOrderServer,
+		a.initHTTPServer,
+	}
+
+	for _, f := range inits {
+		err := f(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *App) initDi(_ context.Context) error {
+	a.diContainer = NewDiContainer()
+	return nil
+}
+
+func (a *App) initLogger(_ context.Context) error {
+	err := logger.Init(
+		config.AppConfig().Logger.Level(),
+		config.AppConfig().Logger.AsJSON(),
+	)
+	if err != nil {
+		log.Printf("❌ logger init failed: %v; using noop logger", err)
+		return err
+	}
+	return nil
+}
+
+func (a *App) initCloser(_ context.Context) error {
+	closer.SetLogger(logger.Logger())
+	return nil
+}
+
+func (a *App) initPg(ctx context.Context) error {
+	pool, err := a.diContainer.PgPool(ctx)
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации pgxpool", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed("PgPoolConnection", func(ctx context.Context) error {
+		pool.Close()
+		return nil
+	})
+
+	return nil
+}
+
+func (a *App) initMigrator(ctx context.Context) error {
+	pool, err := a.diContainer.PgPool(ctx)
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации pgxpool", zap.Error(err))
+		return err
+	}
+
+	migratorRunner := pgMigrator.NewMigrator(stdlib.OpenDBFromPool(pool), config.AppConfig().Postgres.MigrationsDir())
+	ctxMigrator, cancelMigrator := context.WithTimeout(ctx, 30*time.Second)
+	defer cancelMigrator()
+
+	err = migratorRunner.Up(ctxMigrator)
+	if err != nil {
+		logger.Error(ctxMigrator, "❌ databse migration error", zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
+func (a *App) initInventoryConnection(ctx context.Context) error {
+	clientConn, err := a.diContainer.InventoryClientConnection(ctx)
+	if err != nil {
+		logger.Error(ctx, "❌ error init inventory client", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed(
+		"Inventory connection",
+		func(ctx context.Context) error {
+			if cerr := clientConn.Close(); cerr != nil {
+				logger.Error(ctx, "❌ failed to close connect to Inventory", zap.Error(cerr))
+				return cerr
+			}
+
+			return nil
+		},
+	)
+
+	return nil
+}
+
+func (a *App) initPaymentConnection(ctx context.Context) error {
+	clientConn, err := a.diContainer.PaymentClientConnection(ctx)
+	if err != nil {
+		logger.Error(ctx, "❌ error init payment client", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed(
+		"Payment connection",
+		func(ctx context.Context) error {
+			if cerr := clientConn.Close(); cerr != nil {
+				logger.Error(ctx, "❌ failed to close connect to Payment", zap.Error(cerr))
+				return cerr
+			}
+
+			return nil
+		},
+	)
+
+	return nil
+}
+
+func (a *App) initOrderServer(ctx context.Context) error {
+	handler, err := a.diContainer.OrderV1APIHandler(ctx)
+	if err != nil {
+		logger.Error(ctx, "❌ ошибка создания Order сервера OpenAPI", zap.Error(err))
+		return err
+	}
+
+	orderServer, err := order_v1.NewServer(handler)
+	if err != nil {
+		logger.Error(ctx, "❌ ошибка создания Order сервера OpenAPI", zap.Error(err))
+		return err
+	}
+
+	a.orderServer = orderServer
+	return nil
+}
+
+func (a *App) initHTTPServer(ctx context.Context) error {
+	inventoryCon, err := a.diContainer.InventoryClientConnection(ctx)
+	if err != nil {
+		logger.Error(ctx, "❌ ошибка получения клиента Inventory", zap.Error(err))
+		return err
+	}
+
+	paymentCon, err := a.diContainer.PaymentClientConnection(ctx)
+	if err != nil {
+		logger.Error(ctx, "❌ ошибка получения клиента Payment", zap.Error(err))
+		return err
+	}
+
+	r := chi.NewRouter()
+
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(requestProcessingTimeout))
+
+	r.Get("/health", health.HealthCheck)
+	r.Get("/ready", health.ReadyCheck(
+		a.diContainer.pgPool,
+		inventoryCon,
+		paymentCon,
+	))
+
+	r.Mount("/", a.orderServer)
+
+	a.httpServer = &http.Server{
+		Addr:              config.AppConfig().OrderHTTP.Address(),
+		Handler:           r,
+		ReadHeaderTimeout: config.AppConfig().OrderHTTP.ReadTime(),
+	}
+
+	closer.AddNamed(
+		"HTTP server",
+		func(ctx context.Context) error {
+			ctxShutDown, cancel := context.WithTimeout(ctx, shutdownTimeout)
+			defer cancel()
+
+			return a.httpServer.Shutdown(ctxShutDown)
+		},
+	)
+
+	return nil
+}
+
+func (a *App) runHTTPServer(ctx context.Context) error {
+	logger.Info(ctx, fmt.Sprintf("🚀 HTTP-сервер запущен на порту: %s", config.AppConfig().OrderHTTP.Port()))
+
+	err := a.httpServer.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		logger.Error(ctx, "❌ Ошибка работы сервера", zap.Error(err))
+		return err
+	}
+
+	return nil
+}

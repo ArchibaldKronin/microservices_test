@@ -3,7 +3,6 @@ package v1
 import (
 	"context"
 	"errors"
-	"log"
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/converter"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
@@ -34,7 +33,6 @@ func (a *api) PayOrderByUUID(ctx context.Context, req *order_v1.PayOrderRequest,
 				Message: "pay order error: unavailable",
 			}, nil
 		default:
-			log.Printf("pay order error: %v\n", err)
 			return &order_v1.InternalServerError{
 				Code:    500,
 				Message: "internal server error",
@@ -44,7 +42,6 @@ func (a *api) PayOrderByUUID(ctx context.Context, req *order_v1.PayOrderRequest,
 
 	transactionUUID, err := uuid.Parse(transactionId)
 	if err != nil {
-		log.Printf("pay order error: %v\n", err)
 		return &order_v1.InternalServerError{
 			Code:    500,
 			Message: "error parse UUID",

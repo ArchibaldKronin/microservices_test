@@ -3,14 +3,15 @@ package order
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	serviceModel "github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	def "github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository/converter"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5/pgconn"
+	"go.uber.org/zap"
 )
 
 func (r *repository) CreateOrder(ctx context.Context, o *serviceModel.Order) error {
@@ -31,23 +32,22 @@ func (r *repository) CreateOrder(ctx context.Context, o *serviceModel.Order) err
 
 	query, args, err := buildInsertOne.ToSql()
 	if err != nil {
-		slog.Error("repo error build sql", "error ", err)
+		logger.Error(ctx, "repo error build sql", zap.Error(err))
 		return model.ErrBuildQuery
 	}
 
-	// _, err = r.pgRepo.Exec(ctx, query, args...)
 	_, err = r.pgExecuter.Exec(ctx, query, args...)
 	if err != nil {
 
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == "23505" {
-				slog.Error("repo error duplicate", "id", orderRepo.OrderID, "error ", err)
+				logger.Error(ctx, "repo error duplicate", zap.String("order_ID", orderRepo.OrderID), zap.Error(err))
 				return model.ErrDuplicate
 			}
 		}
 
-		slog.Error("repo error create order", "id", orderRepo.OrderID, "error ", err)
+		logger.Error(ctx, "repo error create order", zap.String("order_ID", orderRepo.OrderID), zap.Error(err))
 		return model.ErrExecQuery
 	}
 

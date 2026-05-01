@@ -2,21 +2,25 @@ package order
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"go.uber.org/zap"
 )
 
 func (s *service) CreateOrder(ctx context.Context, userId string, partIds []string) (order *model.Order, err error) {
 	ids, totalPrice, err := s.getPartsInfo(ctx, partIds)
 	if err != nil {
-		slog.Error("error creating order", "error", err)
+		logger.Error(ctx, "error get parts info to create order", zap.Strings("parts_ids", partIds), zap.Error(err))
+
 		return nil, err
 	}
 
 	order = model.NewOrder(userId, ids, totalPrice)
 	if err = s.orderRepo.CreateOrder(ctx, order); err != nil {
-		slog.Error("error saving order", "error", err)
+
+		logger.Error(ctx, "error creating order", zap.Strings("parts_ids", partIds), zap.Error(err))
+
 		return nil, model.ErrInternal
 	}
 
