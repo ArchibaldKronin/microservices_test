@@ -29,7 +29,6 @@ func NewMongoConfig() (*mongoConfig, error) {
 }
 
 func (cfg *mongoConfig) URI() string {
-	fmt.Print(cfg.config.Host)
 	return fmt.Sprintf(
 		"mongodb://%s:%s@%s:%s/%s?authSource=%s",
 		cfg.config.Username,

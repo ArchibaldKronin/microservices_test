@@ -15,7 +15,6 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/testcontainers/path"
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go/wait"
-
 	"go.uber.org/zap"
 )
 
