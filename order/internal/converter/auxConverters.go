@@ -62,6 +62,8 @@ func OrderStatusToDTO(os model.OrderStatus) order_v1.OrderStatus {
 		return order_v1.OrderStatusCANCELLED
 	case model.OrderStatusPAID:
 		return order_v1.OrderStatusPAID
+	case model.OrderStatusCOMPLETED:
+		return order_v1.OrderStatusCOMPLETED
 	default:
 		return order_v1.OrderStatusPENDINGPAYMENT
 	}

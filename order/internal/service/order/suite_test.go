@@ -32,7 +32,7 @@ func (s *ServiceSuite) SetupTest() {
 	s.paymentClient = clientMocks.NewPaymentClient(s.T())
 	s.inventoryClient = clientMocks.NewInventoryClient(s.T())
 
-	s.service = NewService(s.orderRepository, s.txManager, s.inventoryClient, s.paymentClient)
+	// s.service = NewService(s.orderRepository, s.txManager, s.inventoryClient, s.paymentClient)
 }
 
 func (s *ServiceSuite) TearDownTest() {}

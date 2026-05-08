@@ -39,10 +39,18 @@ func (s *service) CancelOrder(ctx context.Context, orderId string) error {
 				}
 			}
 			return nil
+		case model.OrderStatusCANCELLED:
+			logger.Warn(ctx, "error canclelling order", zap.String("id", orderId), zap.Error(model.ErrOrderAlreadyCancelled))
+			return model.ErrOrderAlreadyCancelled
 		case model.OrderStatusPAID:
+			logger.Warn(ctx, "error canclelling order", zap.String("id", orderId), zap.Error(model.ErrOrderAlreadyPaid))
 			return model.ErrOrderAlreadyPaid
+		case model.OrderStatusCOMPLETED:
+			logger.Warn(ctx, "error canclelling order", zap.String("id", orderId), zap.Error(model.ErrOrderAlreadyCompleted))
+			return model.ErrOrderAlreadyCompleted
 		default:
-			return nil
+			logger.Warn(ctx, "unexpected order status", zap.String("id", orderId), zap.Error(model.ErrUnexpectedOrderStatus))
+			return model.ErrUnexpectedOrderStatus
 		}
 	})
 	if err != nil {

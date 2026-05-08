@@ -1,0 +1,85 @@
+package app
+
+import (
+	"context"
+	"log"
+
+	"github.com/ArchibaldKronin/microservices_test/assembly/internal/config"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+)
+
+type App struct {
+	diContainer *diContainer
+}
+
+func New(ctx context.Context) (*App, error) {
+	a := &App{}
+
+	if err := a.initDeps(ctx); err != nil {
+		return nil, err
+	}
+
+	return a, nil
+}
+
+func (a *App) Run(ctx context.Context) error {
+	return a.runConsumer(ctx)
+}
+
+func (a *App) initDeps(ctx context.Context) error {
+	inits := []func(context.Context) error{
+		a.initLogger,
+		a.initDi,
+		a.initCloser,
+	}
+
+	for _, f := range inits {
+		f := f
+		err := f(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *App) initLogger(ctx context.Context) error {
+	err := logger.Init(
+		config.AppConfig().Logger.Level(),
+		config.AppConfig().Logger.AsJSON(),
+	)
+	if err != nil {
+		log.Printf("❌ logger init failed: %v; using noop logger", err)
+		logger.SetNopLogger()
+		return err
+	}
+	return nil
+}
+
+func (a *App) initDi(ctx context.Context) error {
+	a.diContainer = NewDiContainer()
+	return nil
+}
+
+func (a *App) initCloser(ctx context.Context) error {
+	closer.SetLogger(logger.Logger())
+	return nil
+}
+
+func (a *App) runConsumer(ctx context.Context) error {
+	logger.Info(ctx, "🚀 OrderPaid Kafka consumer running")
+
+	c, err := a.diContainer.OrderPaidConsumerService(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = c.RunConsumer(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

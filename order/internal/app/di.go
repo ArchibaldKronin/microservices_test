@@ -9,14 +9,25 @@ import (
 	inventoryClient "github.com/ArchibaldKronin/microservices_test/order/internal/client/grpc/inventory/v1"
 	paymentClient "github.com/ArchibaldKronin/microservices_test/order/internal/client/grpc/payment/v1"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/config"
+	kafkaConverter "github.com/ArchibaldKronin/microservices_test/order/internal/converter/kafka"
+	shipAssembledDecoder "github.com/ArchibaldKronin/microservices_test/order/internal/converter/kafka/decoder"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	orderRepository "github.com/ArchibaldKronin/microservices_test/order/internal/repository/order"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/service"
+	orderConsumer "github.com/ArchibaldKronin/microservices_test/order/internal/service/consumer/order_consumer"
 	orderService "github.com/ArchibaldKronin/microservices_test/order/internal/service/order"
+	orderProducer "github.com/ArchibaldKronin/microservices_test/order/internal/service/producer/order_producer"
 	txmanager "github.com/ArchibaldKronin/microservices_test/order/internal/txManager"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
+	wrappedKafka "github.com/ArchibaldKronin/microservices_test/platform/pkg/kafka"
+	wrappedKafkaConsumer "github.com/ArchibaldKronin/microservices_test/platform/pkg/kafka/consumer"
+	wrappedKafkaProducer "github.com/ArchibaldKronin/microservices_test/platform/pkg/kafka/producer"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	kafkaMiddleware "github.com/ArchibaldKronin/microservices_test/platform/pkg/middleware/kafka"
 	def "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
 	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
 	payment_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/payment/v1"
+	"github.com/IBM/sarama"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -24,22 +35,33 @@ import (
 )
 
 type diContainer struct {
-	orderV1APIHandler def.Handler
+	orderV1APIHandler def.Handler ////////////////////////////
 
-	orderService service.OrderService
+	orderService         service.OrderService         ////////////////////////////
+	orderProducerService service.OrderProducerService ////////////////////////////
+	orderConsumerService service.OrderConsumerService ////////////////////////////
 
-	connectionInventory *grpc.ClientConn
-	inventoryClient     clientGRPC.InventoryClient
+	connectionInventory *grpc.ClientConn           ////////////////////////////
+	inventoryClient     clientGRPC.InventoryClient ////////////////////////////
 
-	connectionPayment *grpc.ClientConn
-	paymentClient     clientGRPC.PaymentClient
+	connectionPayment *grpc.ClientConn         ////////////////////////////
+	paymentClient     clientGRPC.PaymentClient ////////////////////////////
 
-	orderTxManager txmanager.TxManager
+	consumerGroup          sarama.ConsumerGroup
+	orderAssembledConsumer wrappedKafka.Consumer ////////////////////////////
 
-	orderRepository repository.OrderRepository
+	orderAssembledDecoder kafkaConverter.ShipAssembledDecoder
+	syncProducer          sarama.SyncProducer   ////////////////////////////
+	orderPaidProducer     wrappedKafka.Producer ////////////////////////////
 
-	pgPool   *pgxpool.Pool
-	pgPoolMu sync.Mutex
+	orderTxManager txmanager.TxManager ////////////////////////////
+
+	orderRepository repository.OrderRepository ////////////////////////////
+
+	pgPool   *pgxpool.Pool ////////////////////////////
+	pgPoolMu sync.Mutex    ////////////////////////////
+	/////////////////////////////////////////////////////
+	mu sync.Mutex
 }
 
 func NewDiContainer() *diContainer {
@@ -59,12 +81,52 @@ func (d *diContainer) OrderV1APIHandler(ctx context.Context) (def.Handler, error
 	return d.orderV1APIHandler, nil
 }
 
+func (d *diContainer) OrderConsumerService(ctx context.Context) (service.OrderConsumerService, error) {
+	if d.orderConsumerService == nil {
+
+		service, err := d.OrderService(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		orderAssembledConsumer, err := d.OrderAssembledConsumer(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		orderAssembledDecoder, err := d.OrderAssembledDecoder(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		d.orderConsumerService = orderConsumer.NewService(
+			orderAssembledConsumer,
+			orderAssembledDecoder,
+			service,
+		)
+	}
+
+	return d.orderConsumerService, nil
+}
+
 func (d *diContainer) OrderService(ctx context.Context) (service.OrderService, error) {
+	if d.orderService != nil {
+		return d.orderService, nil
+	}
+
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if d.orderService != nil {
+		return d.orderService, nil
+	}
+
 	if d.orderService == nil {
 		var drepo repository.OrderRepository
 		var dtxm txmanager.TxManager
 		var dinvCl clientGRPC.InventoryClient
 		var dpayCl clientGRPC.PaymentClient
+		var dorderProducerService service.OrderProducerService
 
 		errG, ctx := errgroup.WithContext(ctx)
 
@@ -104,12 +166,21 @@ func (d *diContainer) OrderService(ctx context.Context) (service.OrderService, e
 			return nil
 		})
 
+		errG.Go(func() error {
+			orderProducerService, err := d.OrderProducerService(ctx)
+			if err != nil {
+				return err
+			}
+			dorderProducerService = orderProducerService
+			return nil
+		})
+
 		err := errG.Wait()
 		if err != nil {
 			return nil, err
 		}
 
-		d.orderService = orderService.NewService(drepo, dtxm, dinvCl, dpayCl)
+		d.orderService = orderService.NewService(drepo, dtxm, dinvCl, dpayCl, dorderProducerService)
 	}
 
 	return d.orderService, nil
@@ -173,6 +244,57 @@ func (d *diContainer) PaymentClient(ctx context.Context) (clientGRPC.PaymentClie
 	return d.paymentClient, nil
 }
 
+func (d *diContainer) OrderProducerService(ctx context.Context) (service.OrderProducerService, error) {
+	if d.orderProducerService == nil {
+		orderPaidProducer, err := d.OrderPaidProducer(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		d.orderProducerService = orderProducer.NewService(orderPaidProducer)
+	}
+
+	return d.orderProducerService, nil
+}
+
+func (d *diContainer) OrderPaidProducer(ctx context.Context) (wrappedKafka.Producer, error) {
+	if d.orderPaidProducer == nil {
+
+		syncProd, err := d.SyncProducer(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		d.orderPaidProducer = wrappedKafkaProducer.NewProducer(
+			syncProd,
+			config.AppConfig().OrderPaidProducer.Topic(),
+			logger.Logger(),
+		)
+	}
+
+	return d.orderPaidProducer, nil
+}
+
+func (d *diContainer) SyncProducer(ctx context.Context) (sarama.SyncProducer, error) {
+	if d.syncProducer == nil {
+		syncProd, err := sarama.NewSyncProducer(
+			config.AppConfig().Kafka.Brokers(),
+			config.AppConfig().OrderPaidProducer.Config(),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		closer.AddNamed("Kafka sync producer", func(ctx context.Context) error {
+			return syncProd.Close()
+		})
+
+		d.syncProducer = syncProd
+	}
+
+	return d.syncProducer, nil
+}
+
 func (d *diContainer) OrderTxManaget(ctx context.Context) (txmanager.TxManager, error) {
 	if d.orderTxManager == nil {
 
@@ -185,6 +307,56 @@ func (d *diContainer) OrderTxManaget(ctx context.Context) (txmanager.TxManager, 
 	}
 
 	return d.orderTxManager, nil
+}
+
+func (d *diContainer) OrderAssembledConsumer(ctx context.Context) (wrappedKafka.Consumer, error) {
+	if d.orderAssembledConsumer == nil {
+
+		consumerGroup, err := d.ConsumerGroup(ctx)
+		if err != nil {
+			return nil, err
+		}
+		d.orderAssembledConsumer = wrappedKafkaConsumer.NewConsumer(
+			consumerGroup,
+			[]string{
+				config.AppConfig().OrderAssembledConsumer.Topic(),
+			},
+			logger.Logger(),
+			kafkaMiddleware.Logging(logger.Logger()),
+		)
+	}
+
+	return d.orderAssembledConsumer, nil
+}
+
+func (d *diContainer) ConsumerGroup(ctx context.Context) (sarama.ConsumerGroup, error) {
+	if d.consumerGroup == nil {
+
+		consumerGroup, err := sarama.NewConsumerGroup(
+			config.AppConfig().Kafka.Brokers(),
+			config.AppConfig().OrderAssembledConsumer.GroupID(),
+			config.AppConfig().OrderAssembledConsumer.Config(),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		closer.AddNamed("Kafka consumer group", func(ctx context.Context) error {
+			return d.consumerGroup.Close()
+		})
+
+		d.consumerGroup = consumerGroup
+	}
+
+	return d.consumerGroup, nil
+}
+
+func (d *diContainer) OrderAssembledDecoder(ctx context.Context) (kafkaConverter.ShipAssembledDecoder, error) {
+	if d.orderAssembledDecoder == nil {
+		d.orderAssembledDecoder = shipAssembledDecoder.NewOrderAssembledDecoder()
+	}
+
+	return d.orderAssembledDecoder, nil
 }
 
 func (d *diContainer) OrderRepository(ctx context.Context) (repository.OrderRepository, error) {

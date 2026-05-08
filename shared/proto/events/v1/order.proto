@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package events.v1;
+
+option go_package = "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/events/v1;events_v1";
+
+// Константы платежных методов
+enum PaymentMethod {
+  // не объявленный
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  // карта
+  PAYMENT_METHOD_CARD = 1;
+  // СБП
+  PAYMENT_METHOD_SBP = 2;
+  // кредитка
+  PAYMENT_METHOD_CREDIT_CARD = 3;
+  // инвестиции
+  PAYMENT_METHOD_INVESTOR_MONEY = 4;
+}
+
+// Событие оплаты заказа OrderPaid
+message OrderPaid {
+  //  Уникальный идентификатор события (для идемпотентности)
+  string event_uuid = 1;
+  // Идентификатор оплаченного заказа
+  string order_uuid = 2;
+  // Идентификатор пользователя
+  string user_uuid = 3;
+  // Способ оплаты
+  PaymentMethod payment_method = 4;
+  // Идентификатор транзакции, сгенерированный в результате оплаты
+  string transaction_uuid = 5;
+}
+
+// Событие успешного создания корабля ShipAssembled
+message ShipAssembled {
+  //  Уникальный идентификатор события (для идемпотентности)
+  string event_uuid = 1;
+  // Идентификатор оплаченного заказа
+  string order_uuid = 2;
+  // Идентификатор пользователя
+  string user_uuid = 3;
+  // Время (в секундах), потраченное на сборку корабля
+  int64 build_time_sec = 4;
+}

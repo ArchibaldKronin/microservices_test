@@ -15,18 +15,7 @@ import (
 )
 
 const (
-	// httpPort                 = "8080"
-	// dbURI                    = "postgres://order-service-user:order-service-password@localhost:5432/order-service"
-	// readHeaderTimeout        = 5 * time.Second
-	// requestProcessingTimeout = 10 * time.Second
-	// shutdownTimeout          = 10 * time.Second
-	// migrationsDir            = "./migrations"
 	configPath = "../deploy/compose/order/.env"
-)
-
-const (
-// serverInventoryAddress = "localhost:50051"
-// serverPaymentAddress   = "localhost:50052"
 )
 
 func main() {
@@ -43,10 +32,10 @@ func main() {
 	defer appCancel()
 	defer gracefulShutdown()
 
-	closer.Configure(
-		syscall.SIGINT,
-		syscall.SIGTERM,
-	)
+	// closer.Configure(
+	// 	syscall.SIGINT,
+	// 	syscall.SIGTERM,
+	// )
 
 	app, err := app.New(appCtx)
 	if err != nil {
