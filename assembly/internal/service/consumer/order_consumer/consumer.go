@@ -34,9 +34,10 @@ func NewService(
 func (c *service) RunConsumer(ctx context.Context) error {
 	logger.Info(ctx, "starting assembly OrderPaidConsumer service")
 
-	err := c.orderPaidConsumer.Consume(ctx, c.OrderPaidHandler)
+	err := c.orderPaidConsumer.Consume(ctx, c.orderPaidHandler)
 	if err != nil {
 		logger.Error(ctx, "consume from order.paid topic error", zap.Error(err))
+		return err
 	}
 
 	return nil

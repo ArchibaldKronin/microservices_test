@@ -83,9 +83,9 @@ func (g *groupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim s
 				// jitterBigInt, err := rand.Int(rand.Reader, big.NewInt(int64(base/2)))
 				jitter := time.Duration(rand.Int64N(int64(base / 2))) //nolint:gosec
 				// jitter := time.Duration(jitterBigInt.Int64())
-				if err != nil {
-					return err
-				}
+				// if err != nil {
+				// 	return err
+				// }
 				delay := base + jitter
 				g.logger.Error(
 					session.Context(),
@@ -98,7 +98,7 @@ func (g *groupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim s
 					continue
 				case <-session.Context().Done():
 					g.logger.Info(session.Context(), "Kafka session context done")
-					return nil
+					return session.Context().Err()
 				}
 			}
 
@@ -110,7 +110,7 @@ func (g *groupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim s
 
 		case <-session.Context().Done():
 			g.logger.Info(session.Context(), "Kafka session context done")
-			return nil
+			return session.Context().Err()
 		}
 	}
 }

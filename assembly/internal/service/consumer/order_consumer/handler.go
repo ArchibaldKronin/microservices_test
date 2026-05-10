@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	// "math/rand/v2"
 	"time"
 
 	"github.com/ArchibaldKronin/microservices_test/assembly/internal/model"
@@ -16,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (c *service) OrderPaidHandler(ctx context.Context, msg consumer.Message) error {
+func (c *service) orderPaidHandler(ctx context.Context, msg consumer.Message) error {
 	event, err := c.orderPaidDecoder.Decode(msg.Value)
 	if err != nil {
 		logger.Error(ctx, "Failed to decode OrderPaid", zap.Error(err))
@@ -32,7 +31,7 @@ func (c *service) OrderPaidHandler(ctx context.Context, msg consumer.Message) er
 	ctx, cancel := context.WithTimeout(ctx, delayMillisec)
 	defer cancel()
 
-	delaySec := int64(math.Round(float64(delayMillisec) / 1000))
+	delaySec := int64(math.Round(float64(delayMillisec) / 1000_000_000))
 
 	<-ctx.Done()
 

@@ -35,7 +35,7 @@ func NewDiContainer() *diContainer {
 }
 
 func (d *diContainer) OrderPaidConsumerService(ctx context.Context) (service.OrderPaidConsumer, error) {
-	if d.shipAssembledProducerService == nil {
+	if d.orderPaidConsumerService == nil {
 		orderPaidConsumer, err := d.OrderPaidConsumer(ctx)
 		if err != nil {
 			return nil, err

@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s *service) ShipAssembledHandler(ctx context.Context, msg consumer.Message) error {
+func (s *service) shipAssembledHandler(ctx context.Context, msg consumer.Message) error {
 	event, err := s.orderAssembledDecoder.Decode(msg.Value)
 	if err != nil {
 		logger.Error(ctx, "Failed to decode ShipAssembled", zap.Error(err))
