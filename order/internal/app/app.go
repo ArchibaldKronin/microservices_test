@@ -47,13 +47,41 @@ func New(ctx context.Context) (*App, error) {
 }
 
 func (a *App) Run(ctx context.Context) error {
-	return a.runHTTPServer(ctx)
+	errCh := make(chan error, 2)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		if err := a.runConsumer(ctx); err != nil {
+			errCh <- fmt.Errorf("consumer crashed: %w", err)
+		}
+	}()
+
+	go func() {
+		if err := a.runHTTPServer(ctx); err != nil {
+			errCh <- fmt.Errorf("HTTP server crashed: %w", err)
+		}
+	}()
+
+	select {
+	case err := <-errCh:
+		logger.Error(ctx, "Component crushed, shutting down", zap.Error(err))
+		cancel()
+		<-ctx.Done()
+		return err
+	case <-ctx.Done():
+		logger.Info(ctx, "Shutdown signal received")
+	}
+
+	return nil
+	// return a.runHTTPServer(ctx)
 }
 
 func (a *App) initDeps(ctx context.Context) error {
 	inits := []func(context.Context) error{
-		a.initDi,
 		a.initLogger,
+		a.initDi,
 		a.initCloser,
 		a.initPg,
 		a.initMigrator,
@@ -73,11 +101,6 @@ func (a *App) initDeps(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) initDi(_ context.Context) error {
-	a.diContainer = NewDiContainer()
-	return nil
-}
-
 func (a *App) initLogger(_ context.Context) error {
 	err := logger.Init(
 		config.AppConfig().Logger.Level(),
@@ -85,8 +108,14 @@ func (a *App) initLogger(_ context.Context) error {
 	)
 	if err != nil {
 		log.Printf("❌ logger init failed: %v; using noop logger", err)
+		logger.SetNopLogger()
 		return err
 	}
+	return nil
+}
+
+func (a *App) initDi(_ context.Context) error {
+	a.diContainer = NewDiContainer()
 	return nil
 }
 
@@ -244,6 +273,22 @@ func (a *App) runHTTPServer(ctx context.Context) error {
 	err := a.httpServer.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		logger.Error(ctx, "❌ Ошибка работы сервера", zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
+func (a *App) runConsumer(ctx context.Context) error {
+	logger.Info(ctx, "🚀 OrderPaid Kafka consumer running")
+
+	c, err := a.diContainer.OrderConsumerService(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = c.RunConsumer(ctx)
+	if err != nil {
 		return err
 	}
 

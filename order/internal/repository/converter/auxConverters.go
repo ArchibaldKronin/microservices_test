@@ -43,6 +43,8 @@ func StatusToDomain(s model.OrderStatus) serviceModel.OrderStatus {
 		return serviceModel.OrderStatusPAID
 	case model.OrderStatusCANCELLED:
 		return serviceModel.OrderStatusCANCELLED
+	case model.OrderStatusCOMPLETED:
+		return serviceModel.OrderStatusCOMPLETED
 	default:
 		return serviceModel.OrderStatusCANCELLED
 	}
@@ -56,6 +58,8 @@ func StatusToRepo(s serviceModel.OrderStatus) model.OrderStatus {
 		return model.OrderStatusPAID
 	case serviceModel.OrderStatusCANCELLED:
 		return model.OrderStatusCANCELLED
+	case serviceModel.OrderStatusCOMPLETED:
+		return model.OrderStatusCOMPLETED
 	default:
 		return model.OrderStatusCANCELLED
 	}

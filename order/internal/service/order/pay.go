@@ -8,6 +8,7 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	repoModel "github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -23,6 +24,22 @@ func (s *service) PayOrder(ctx context.Context, orderId string, pm model.Payment
 				return model.ErrNotFound
 			}
 			return model.ErrInternal
+		}
+
+		switch order.Status {
+		case model.OrderStatusCANCELLED:
+			logger.Warn(ctx, "error paing order", zap.String("id", orderId), zap.Error(model.ErrOrderAlreadyCancelled))
+			return model.ErrOrderAlreadyCancelled
+		case model.OrderStatusPAID:
+			logger.Warn(ctx, "error paing order", zap.String("id", orderId), zap.Error(model.ErrOrderAlreadyPaid))
+			return model.ErrOrderAlreadyPaid
+		case model.OrderStatusCOMPLETED:
+			logger.Warn(ctx, "error paing order", zap.String("id", orderId), zap.Error(model.ErrOrderAlreadyCompleted))
+			return model.ErrOrderAlreadyCompleted
+		case model.OrderStatusPENDINGPAYMENT:
+		default:
+			logger.Warn(ctx, "unexpected order status", zap.String("id", orderId), zap.Error(model.ErrUnexpectedOrderStatus))
+			return model.ErrUnexpectedOrderStatus
 		}
 
 		userId := order.UserID
@@ -42,9 +59,22 @@ func (s *service) PayOrder(ctx context.Context, orderId string, pm model.Payment
 				logger.Error(ctx, "error NON CONSISTENT DATA", zap.String("id", orderId), zap.Error(err))
 				return model.ErrNotFound
 			} else {
-				logger.Error(ctx, "eerror updating order", zap.String("id", orderId), zap.Error(err))
+				logger.Error(ctx, "error updating order", zap.String("id", orderId), zap.Error(err))
 				return model.ErrInternal
 			}
+		}
+
+		eventID := uuid.NewString()
+		err = s.orderProducerService.ProduceOrderPaid(ctx, model.OrderPaidEvent{
+			EventUuid:       eventID,
+			OrderUuid:       order.OrderID,
+			UserUuid:        order.UserID,
+			PaymentMethod:   pm,
+			TransactionUuid: transId,
+		})
+		if err != nil {
+			logger.Error(ctx, "error producing ", zap.String("id", orderId), zap.String("eventID", eventID), zap.Error(err))
+			return model.ErrInternal
 		}
 
 		result = transId
@@ -53,5 +83,6 @@ func (s *service) PayOrder(ctx context.Context, orderId string, pm model.Payment
 	if err != nil {
 		return "", err
 	}
+
 	return result, nil
 }
