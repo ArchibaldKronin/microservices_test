@@ -5,12 +5,13 @@ go 1.26.1
 require (
 	github.com/IBM/sarama v1.48.0
 	github.com/docker/go-connections v0.7.0
+	github.com/gomodule/redigo v1.9.2
 	github.com/moby/moby/api v1.54.2
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.27.1
 	github.com/testcontainers/testcontainers-go v0.42.0
 	go.mongodb.org/mongo-driver v1.17.9
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 	google.golang.org/grpc v1.80.0
 )
 

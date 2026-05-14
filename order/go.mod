@@ -6,7 +6,7 @@ require (
 	github.com/ArchibaldKronin/microservices_test/shared v0.0.0-00010101000000-000000000000
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/brianvoe/gofakeit/v7 v7.14.1
-	github.com/caarlos0/env/v11 v11.4.0
+	github.com/caarlos0/env/v11 v11.4.1
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.9.2
@@ -19,7 +19,7 @@ require (
 require (
 	github.com/ArchibaldKronin/microservices_test/platform v0.0.0-00010101000000-000000000000
 	github.com/IBM/sarama v1.48.0
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/protobuf v1.36.11
 )

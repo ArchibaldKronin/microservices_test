@@ -1,11 +1,11 @@
-parameters: 
-  - $ref: ../params/order_uuid.yaml
-
 post:
   summary: Cancel order
   operationId: CancelOrderByUUID
   tags:
     - Order
+  parameters: 
+  - $ref: ../params/order_uuid.yaml
+  - $ref: ../headers/sission_uuid.yaml
   responses:
     '204':
       description: Заказ успешно отменен

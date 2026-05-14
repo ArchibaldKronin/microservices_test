@@ -1,11 +1,11 @@
-parameters:
-  - $ref: ../params/order_uuid.yaml
-
 post:
   summary: Оплатить заказ
   operationId: PayOrderByUUID
   tags: 
     - Order
+  parameters: 
+  - $ref: ../params/order_uuid.yaml
+  - $ref: ../headers/sission_uuid.yaml
   requestBody:
     required: true
     content:

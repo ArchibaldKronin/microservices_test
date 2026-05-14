@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"math"
 	"math/big"
 	"time"
 
@@ -31,7 +30,8 @@ func (c *service) orderPaidHandler(ctx context.Context, msg consumer.Message) er
 	ctx, cancel := context.WithTimeout(ctx, delayMillisec)
 	defer cancel()
 
-	delaySec := int64(math.Round(float64(delayMillisec) / 1000_000_000))
+	delaySec := int64(delayMillisec.Seconds())
+	// delaySec := int64(math.Round(float64(delayMillisec) / 1000_000_000))
 
 	<-ctx.Done()
 

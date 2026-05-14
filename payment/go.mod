@@ -10,11 +10,11 @@ require (
 	github.com/ArchibaldKronin/microservices_test/platform v0.0.0-00010101000000-000000000000
 	github.com/ArchibaldKronin/microservices_test/shared v0.0.0-00010101000000-000000000000
 	github.com/brianvoe/gofakeit/v7 v7.14.1
-	github.com/caarlos0/env/v11 v11.4.0
+	github.com/caarlos0/env/v11 v11.4.1
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.11.1
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 	google.golang.org/grpc v1.80.0
 )
 
