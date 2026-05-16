@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (r *repository) GetUser(ctx context.Context, userID string) (*model.User, error) {
+func (r *repository) GetUserByID(ctx context.Context, userID string) (*model.User, error) {
 	buildSelectOne := sq.Select(
 		"user_id",
 		"login",

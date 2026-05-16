@@ -7,17 +7,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ArchibaldKronin/microservices_test/inventory/internal/app"
-	"github.com/ArchibaldKronin/microservices_test/inventory/internal/config"
+	"github.com/ArchibaldKronin/microservices_test/iam/internal/app"
+	"github.com/ArchibaldKronin/microservices_test/iam/internal/config"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	"go.uber.org/zap"
 )
 
 const (
-	// grpcPort = 50051
-	// dbURI    = "mongodb://inventory-service-user:inventory-service-password@localhost:27017/inventory-service?authSource=admin"
-	configPath = "../deploy/compose/inventory/.env"
+	configPath = "../deploy/compose/iam/.env"
 )
 
 func main() {
@@ -34,12 +32,12 @@ func main() {
 	defer appCancel()
 	defer gracefulShutdown()
 
-	// closer.Configure(
-	// 	syscall.SIGINT,
-	// 	syscall.SIGTERM,
-	// )
+	closer.Configure(
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
 
-	initCtx, initCancel := context.WithTimeout(appCtx, 5*time.Second)
+	initCtx, initCancel := context.WithTimeout(appCtx, 7*time.Second)
 	defer initCancel()
 
 	app, err := app.New(initCtx)

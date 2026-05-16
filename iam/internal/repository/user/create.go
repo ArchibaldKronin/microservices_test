@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (r *repository) Register(ctx context.Context, user model.User, passwordHash string) (string, error) {
+func (r *repository) Create(ctx context.Context, user model.User, passwordHash string) (string, error) {
 	userRepo, err := converter.UserToRepo(user, passwordHash)
 	if err != nil {
 		logger.Error(ctx, "repo error in user converter", zap.String("userID", user.UserUUID), zap.Error(err))
