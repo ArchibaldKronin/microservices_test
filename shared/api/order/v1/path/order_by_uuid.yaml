@@ -1,11 +1,11 @@
-parameters: 
-  - $ref: ../params/order_uuid.yaml
-
 get:
   summary: Get order data by UUID
   operationId: GetOrderByUUID
   tags: 
     - Order
+  parameters: 
+  - $ref: ../params/order_uuid.yaml
+  - $ref: ../headers/sission_uuid.yaml
   responses: 
     '200':
       description: Успешно получена информация о заказе

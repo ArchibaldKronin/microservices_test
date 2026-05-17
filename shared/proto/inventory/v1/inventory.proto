@@ -3,7 +3,6 @@ syntax = "proto3";
 package inventory.v1;
 
 import "google/protobuf/timestamp.proto";
-// import "google/protobuf/wrappers.proto";
 
 option go_package = "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1;inventory_v1";
 

@@ -9,9 +9,13 @@ import (
 	inventoryRepository "github.com/ArchibaldKronin/microservices_test/inventory/internal/repository/part"
 	"github.com/ArchibaldKronin/microservices_test/inventory/internal/service"
 	inventoryService "github.com/ArchibaldKronin/microservices_test/inventory/internal/service/part"
+	grpcInterceptors "github.com/ArchibaldKronin/microservices_test/platform/pkg/middleware/grpc"
+	auth_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/auth/v1"
 	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type diContainer struct {
@@ -23,10 +27,55 @@ type diContainer struct {
 
 	mongoDBClient *mongo.Client
 	mongoDBHandle *mongo.Database
+
+	authInterceptor     *grpcInterceptors.AuthInterceptor
+	iamClient           auth_v1.AuthServiceClient
+	iamClientConnection *grpc.ClientConn
 }
 
 func NewDiContainer() *diContainer {
 	return &diContainer{}
+}
+
+func (d *diContainer) AuthInterceptor(ctx context.Context) (*grpcInterceptors.AuthInterceptor, error) {
+	if d.authInterceptor == nil {
+		client, err := d.IamClient(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		d.authInterceptor = grpcInterceptors.NewAuthInterceptor(client)
+	}
+
+	return d.authInterceptor, nil
+}
+
+func (d *diContainer) IamClient(ctx context.Context) (auth_v1.AuthServiceClient, error) {
+	if d.iamClient == nil {
+		conn, err := d.IamClientConnection(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		d.iamClient = auth_v1.NewAuthServiceClient(conn)
+	}
+
+	return d.iamClient, nil
+}
+
+func (d *diContainer) IamClientConnection(_ context.Context) (*grpc.ClientConn, error) {
+	if d.iamClientConnection == nil {
+		connIam, err := grpc.NewClient(
+			config.AppConfig().IamConfig.Address(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+		if err != nil {
+			return nil, err
+		}
+		d.iamClientConnection = connIam
+	}
+
+	return d.iamClientConnection, nil
 }
 
 func (d *diContainer) InventoryV1API(ctx context.Context) (inventory_v1.InventoryServiceServer, error) {

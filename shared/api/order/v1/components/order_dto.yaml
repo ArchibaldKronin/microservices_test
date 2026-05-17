@@ -23,7 +23,7 @@ properties:
       format: uuid
       example: "d1a7e3c5-9b2f-4c8d-a6e1-7f3b2d9c4a55"
     description: id-шники деталей
-    # example: "6b4f0c92-8d3a-4e1b-9f7c-5a2d8e6c1b30"
+    example: "6b4f0c92-8d3a-4e1b-9f7c-5a2d8e6c1b31"
   total_price:
     type: number
     format: float

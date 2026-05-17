@@ -45,6 +45,7 @@ func (a *App) initDeps(ctx context.Context) error {
 		a.initLogger,
 		a.initCloser,
 		a.initMongo,
+		a.initAuthInterceptor,
 		a.initListener,
 		a.initGRPCServer,
 	}
@@ -94,6 +95,34 @@ func (a *App) initMongo(ctx context.Context) error {
 	return nil
 }
 
+func (a *App) initAuthInterceptor(ctx context.Context) error {
+	conn, err := a.diContainer.IamClientConnection(ctx)
+	if err != nil {
+		logger.Error(ctx, "❌ error init iam client", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed(
+		"Iam connection",
+		func(ctx context.Context) error {
+			if cerr := conn.Close(); cerr != nil {
+				logger.Error(ctx, "❌ failed to close connect to Iam", zap.Error(cerr))
+				return cerr
+			}
+
+			return nil
+		},
+	)
+
+	_, err = a.diContainer.AuthInterceptor(ctx)
+	if err != nil {
+		logger.Error(ctx, "❌ error init auth interceptor", zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
 func (a *App) initListener(ctx context.Context) error {
 	listener, err := net.Listen("tcp", config.AppConfig().InventoryGRPC.Address())
 	if err != nil {
@@ -120,7 +149,16 @@ func (a *App) initListener(ctx context.Context) error {
 }
 
 func (a *App) initGRPCServer(ctx context.Context) error {
-	a.grpcServer = grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
+	//nolint:gosec
+	authInterceptor, _ := a.diContainer.AuthInterceptor(ctx)
+
+	a.grpcServer = grpc.NewServer(
+		grpc.Creds(insecure.NewCredentials()),
+		grpc.ChainUnaryInterceptor(
+			authInterceptor.Unary(),
+		),
+	)
+	// a.grpcServer = grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
 
 	closer.AddNamed(
 		"gRPC server",

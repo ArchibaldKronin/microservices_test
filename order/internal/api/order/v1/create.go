@@ -12,7 +12,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func (a *api) CreateOrder(ctx context.Context, req *order_v1.CreateOrderRequest) (order_v1.CreateOrderRes, error) {
+func (a *api) CreateOrder(
+	ctx context.Context,
+	req *order_v1.CreateOrderRequest,
+	params order_v1.CreateOrderParams,
+) (order_v1.CreateOrderRes, error) {
 	ctx = logger.WithUserID(ctx, req.UserUUID.String())
 
 	partIds := converter.UUIDsToString(req.PartUuids)
