@@ -87,6 +87,7 @@ func (a *App) initDeps(ctx context.Context) error {
 		a.initMigrator,
 		a.initInventoryConnection,
 		a.initPaymentConnection,
+		a.initAuthMiddleware,
 		a.initOrderServer,
 		a.initHTTPServer,
 	}
@@ -203,6 +204,34 @@ func (a *App) initPaymentConnection(ctx context.Context) error {
 	return nil
 }
 
+func (a *App) initAuthMiddleware(ctx context.Context) error {
+	conn, err := a.diContainer.IamClientConnection(ctx)
+	if err != nil {
+		logger.Error(ctx, "❌ error init iam client", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed(
+		"Iam connection",
+		func(ctx context.Context) error {
+			if cerr := conn.Close(); cerr != nil {
+				logger.Error(ctx, "❌ failed to close connect to Iam", zap.Error(cerr))
+				return cerr
+			}
+
+			return nil
+		},
+	)
+
+	_, err = a.diContainer.AuthMiddleware(ctx)
+	if err != nil {
+		logger.Error(ctx, "❌ error init auth middleware", zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
 func (a *App) initOrderServer(ctx context.Context) error {
 	handler, err := a.diContainer.OrderV1APIHandler(ctx)
 	if err != nil {
@@ -221,29 +250,32 @@ func (a *App) initOrderServer(ctx context.Context) error {
 }
 
 func (a *App) initHTTPServer(ctx context.Context) error {
-	inventoryCon, err := a.diContainer.InventoryClientConnection(ctx)
-	if err != nil {
-		logger.Error(ctx, "❌ ошибка получения клиента Inventory", zap.Error(err))
-		return err
-	}
+	// inventoryCon, err := a.diContainer.InventoryClientConnection(ctx)
+	// if err != nil {
+	// 	logger.Error(ctx, "❌ ошибка получения клиента Inventory", zap.Error(err))
+	// 	return err
+	// }
 
-	paymentCon, err := a.diContainer.PaymentClientConnection(ctx)
-	if err != nil {
-		logger.Error(ctx, "❌ ошибка получения клиента Payment", zap.Error(err))
-		return err
-	}
+	// paymentCon, err := a.diContainer.PaymentClientConnection(ctx)
+	// if err != nil {
+	// 	logger.Error(ctx, "❌ ошибка получения клиента Payment", zap.Error(err))
+	// 	return err
+	// }
 
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(requestProcessingTimeout))
+	r.Use(a.diContainer.authMiddleware.Handle)
 
 	r.Get("/health", health.HealthCheck)
 	r.Get("/ready", health.ReadyCheck(
 		a.diContainer.pgPool,
-		inventoryCon,
-		paymentCon,
+		a.diContainer.connectionInventory,
+		a.diContainer.connectionPayment,
+		// inventoryCon,
+		// paymentCon,
 	))
 
 	r.Mount("/", a.orderServer)

@@ -10,6 +10,11 @@ import (
 )
 
 func (a *api) ListParts(ctx context.Context, req *inventory_v1.ListPartsRequest) (*inventory_v1.ListPartsResponse, error) {
+	// md, ok := metadata.FromIncomingContext(ctx)
+	// if ok {
+	// 	logger.Info(ctx, "done", zap.Any("md", md))
+	// }
+
 	filter := req.GetFilter()
 	if filter == nil {
 		return nil, status.Error(codes.InvalidArgument, "handler error: запрос обязан содержать поле filter")

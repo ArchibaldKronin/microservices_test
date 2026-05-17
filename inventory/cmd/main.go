@@ -34,10 +34,10 @@ func main() {
 	defer appCancel()
 	defer gracefulShutdown()
 
-	// closer.Configure(
-	// 	syscall.SIGINT,
-	// 	syscall.SIGTERM,
-	// )
+	closer.Configure(
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
 
 	initCtx, initCancel := context.WithTimeout(appCtx, 5*time.Second)
 	defer initCancel()

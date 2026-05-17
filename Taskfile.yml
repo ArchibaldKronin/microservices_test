@@ -518,7 +518,7 @@ tasks:
         fi
         
         # Проверяем, что UUID пользователя совпадает
-        WHOAMI_UUID=$(echo $WHOAMI_RESPONSE | sed -n 's/.*"user"[^"]*"uuid": *"\([^"]*\)".*/\1/p')
+        WHOAMI_UUID=$(echo $WHOAMI_RESPONSE | sed -n 's/.*"user"[^"]*"userUuid": *"\([^"]*\)".*/\1/p')
         if [[ "$WHOAMI_UUID" != "$USER_UUID" ]]; then
           echo "❌ UUID пользователя не совпадает. Ожидался: $USER_UUID, получен: $WHOAMI_UUID"
           exit 1

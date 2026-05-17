@@ -23,8 +23,10 @@ import (
 	wrappedKafkaConsumer "github.com/ArchibaldKronin/microservices_test/platform/pkg/kafka/consumer"
 	wrappedKafkaProducer "github.com/ArchibaldKronin/microservices_test/platform/pkg/kafka/producer"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	authMiddlewarePackage "github.com/ArchibaldKronin/microservices_test/platform/pkg/middleware/http"
 	kafkaMiddleware "github.com/ArchibaldKronin/microservices_test/platform/pkg/middleware/kafka"
 	def "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
+	auth_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/auth/v1"
 	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
 	payment_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/payment/v1"
 	"github.com/IBM/sarama"
@@ -61,11 +63,56 @@ type diContainer struct {
 	pgPool   *pgxpool.Pool ////////////////////////////
 	pgPoolMu sync.Mutex    ////////////////////////////
 	/////////////////////////////////////////////////////
+	authMiddleware      *authMiddlewarePackage.AuthMiddleware
+	iamClient           auth_v1.AuthServiceClient
+	iamClientConnection *grpc.ClientConn
+
 	mu sync.Mutex
 }
 
 func NewDiContainer() *diContainer {
 	return &diContainer{}
+}
+
+func (d *diContainer) AuthMiddleware(ctx context.Context) (*authMiddlewarePackage.AuthMiddleware, error) {
+	if d.authMiddleware == nil {
+		client, err := d.IamClient(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		d.authMiddleware = authMiddlewarePackage.NewAuthMiddleware(client)
+	}
+
+	return d.authMiddleware, nil
+}
+
+func (d *diContainer) IamClient(ctx context.Context) (auth_v1.AuthServiceClient, error) {
+	if d.iamClient == nil {
+		conn, err := d.IamClientConnection(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		d.iamClient = auth_v1.NewAuthServiceClient(conn)
+	}
+
+	return d.iamClient, nil
+}
+
+func (d *diContainer) IamClientConnection(_ context.Context) (*grpc.ClientConn, error) {
+	if d.iamClientConnection == nil {
+		connIam, err := grpc.NewClient(
+			config.AppConfig().IamConfig.Address(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+		if err != nil {
+			return nil, err
+		}
+		d.iamClientConnection = connIam
+	}
+
+	return d.iamClientConnection, nil
 }
 
 func (d *diContainer) OrderV1APIHandler(ctx context.Context) (def.Handler, error) {

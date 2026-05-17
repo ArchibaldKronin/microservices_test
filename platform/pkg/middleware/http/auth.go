@@ -36,6 +36,7 @@ func (m *AuthMiddleware) Handle(next http.Handler) http.Handler {
 		whoamiRes, err := m.iamClient.Whoami(r.Context(), &auth_v1.WhoamiRequest{SessionUuid: sessionUUID})
 		if err != nil {
 			writeErrorResponse(w, http.StatusUnauthorized, "INVALID_SESSION", "Authentication failed")
+			return
 		}
 
 		// Добавляем пользователя и session UUID в контекст используя функции из grpc middleware

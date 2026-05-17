@@ -151,7 +151,7 @@ func (a *App) initTelegramBot(ctx context.Context) error {
 			_, err := b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID: update.Message.Chat.ID,
 				Text: `📝 Notification bot активирован!
-Теперь Вы будете получать уведомления о новых наблюдениях.`,
+Теперь Вы будете получать уведомления об оплате и сборке заказов!.`,
 			})
 			if err != nil {
 				logger.Error(ctx, "Failed to send activation message", zap.Error(err))
