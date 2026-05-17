@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (s *authService) Login(ctx context.Context, login string, pw string) (string, error) {
+func (s *authService) Login(ctx context.Context, login, pw string) (string, error) {
 	// сверить пароль
 	userID, hashed, err := s.userService.GetCredentials(ctx, login)
 	if err != nil {
@@ -28,7 +28,7 @@ func (s *authService) Login(ctx context.Context, login string, pw string) (strin
 		return "", model.ErrAutheticationData
 	}
 
-	//sessionID
+	// sessionID
 	sessionID := uuid.NewString()
 	user, err := s.userService.GetUserByID(ctx, userID)
 	if err != nil {
@@ -36,16 +36,20 @@ func (s *authService) Login(ctx context.Context, login string, pw string) (strin
 		return "", model.ErrInternal
 	}
 
-	//create session in Redis
+	// create session in Redis
 	err = s.sessionRepo.CreateUserSession(ctx, sessionID, *user, s.cacheTTL)
 	if err != nil {
 		logger.Error(ctx, "error creating session", zap.Error(err))
 		return "", model.ErrInternal
 	}
 
-	//add session in User's session set
-	_ = s.sessionRepo.AddSessionToUserSet(ctx, user.UserUUID, sessionID, s.cacheTTL)
+	// add session in User's session set
+	err = s.sessionRepo.AddSessionToUserSet(ctx, user.UserUUID, sessionID, s.cacheTTL)
+	if err != nil {
+		logger.Error(ctx, "error add session in User's session set", zap.Error(err))
+		return "", model.ErrInternal
+	}
 
-	//return sessionID
+	// return sessionID
 	return sessionID, nil
 }

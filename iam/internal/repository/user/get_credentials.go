@@ -4,16 +4,15 @@ import (
 	"context"
 	"errors"
 
-	repoModel "github.com/ArchibaldKronin/microservices_test/iam/internal/repository/model"
-	"github.com/jackc/pgx/v5"
-
 	def "github.com/ArchibaldKronin/microservices_test/iam/internal/repository"
+	repoModel "github.com/ArchibaldKronin/microservices_test/iam/internal/repository/model"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
 )
 
-func (r *repository) GetCredentials(ctx context.Context, login string) (id string, pw string, err error) {
+func (r *repository) GetCredentials(ctx context.Context, login string) (id, pw string, err error) {
 	buildSelectOne := sq.Select(
 		"user_id",
 		"password_hash",

@@ -23,5 +23,4 @@ func (r *sessionRepository) AddSessionToUserSet(ctx context.Context, userID, ses
 	}
 
 	return nil
-
 }

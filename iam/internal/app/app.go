@@ -8,15 +8,14 @@ import (
 	"net"
 	"time"
 
+	"github.com/ArchibaldKronin/microservices_test/iam/internal/config"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/grpc/health"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	pgMigrator "github.com/ArchibaldKronin/microservices_test/platform/pkg/migrator/pg"
 	auth_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/auth/v1"
 	user_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/user/v1"
 	"github.com/jackc/pgx/v5/stdlib"
-
-	"github.com/ArchibaldKronin/microservices_test/iam/internal/config"
-	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
-	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -78,10 +77,12 @@ func (a *App) initLogger(ctx context.Context) error {
 	}
 	return nil
 }
+
 func (a *App) initDI(ctx context.Context) error {
 	a.diContainer = NewDiContainer()
 	return nil
 }
+
 func (a *App) initCloser(ctx context.Context) error {
 	closer.SetLogger(logger.Logger())
 	return nil
@@ -101,6 +102,7 @@ func (a *App) initPostgres(ctx context.Context) error {
 
 	return nil
 }
+
 func (a *App) initMigrator(ctx context.Context) error {
 	pool, err := a.diContainer.UserPgPool(ctx)
 	if err != nil {

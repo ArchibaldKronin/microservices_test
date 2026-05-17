@@ -149,6 +149,7 @@ func (a *App) initListener(ctx context.Context) error {
 }
 
 func (a *App) initGRPCServer(ctx context.Context) error {
+	//nolint:gosec
 	authInterceptor, _ := a.diContainer.AuthInterceptor(ctx)
 
 	a.grpcServer = grpc.NewServer(

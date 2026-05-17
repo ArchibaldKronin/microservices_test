@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s *service) GetCredentials(ctx context.Context, login string) (id string, pw string, err error) {
+func (s *service) GetCredentials(ctx context.Context, login string) (id, pw string, err error) {
 	id, pw, err = s.repo.GetCredentials(ctx, login)
 	if err != nil {
 		logger.Error(ctx, "error getting user", zap.String("login", login), zap.Error(err))

@@ -4,10 +4,9 @@ import (
 	"context"
 	"time"
 
+	def "github.com/ArchibaldKronin/microservices_test/platform/pkg/cache"
 	redigo "github.com/gomodule/redigo/redis"
 	"go.uber.org/zap"
-
-	def "github.com/ArchibaldKronin/microservices_test/platform/pkg/cache"
 )
 
 var _ def.RedisClient = (*client)(nil)

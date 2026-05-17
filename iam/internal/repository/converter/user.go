@@ -11,7 +11,7 @@ import (
 func UserToRedisView(user model.User) (repoModel.UserRedisView, error) {
 	redisNm, err := json.Marshal(user.NotificationMethods)
 	if err != nil {
-		return repoModel.UserRedisView{}, fmt.Errorf("Error marshaling Notification Method: %w", err)
+		return repoModel.UserRedisView{}, fmt.Errorf("error marshaling Notification Method: %w", err)
 	}
 
 	return repoModel.UserRedisView{
@@ -26,7 +26,7 @@ func UserFromRedisView(redisModel repoModel.UserRedisView) (model.User, error) {
 	var nm []model.NotificationMethod
 	err := json.Unmarshal(redisModel.NotificationMethods, &nm)
 	if err != nil {
-		return model.User{}, fmt.Errorf("Error unmarshaling Notification Method: %w", err)
+		return model.User{}, fmt.Errorf("error unmarshaling Notification Method: %w", err)
 	}
 
 	return model.User{
@@ -50,7 +50,7 @@ func UserToRepo(user model.User, passwordHash ...string) (repoModel.User, error)
 
 	nm, err := json.Marshal(user.NotificationMethods)
 	if err != nil {
-		return result, fmt.Errorf("Error marshaling Notification Method: %w", err)
+		return result, fmt.Errorf("error marshaling Notification Method: %w", err)
 	}
 
 	result.NotificationMethods = nm
@@ -67,7 +67,7 @@ func UserToDomain(user repoModel.User) (model.User, error) {
 	var nm []model.NotificationMethod
 	err := json.Unmarshal(user.NotificationMethods, &nm)
 	if err != nil {
-		return result, fmt.Errorf("Error unmarshaling Notification Method: %w", err)
+		return result, fmt.Errorf("error unmarshaling Notification Method: %w", err)
 	}
 
 	result.NotificationMethods = nm

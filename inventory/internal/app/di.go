@@ -77,6 +77,7 @@ func (d *diContainer) IamClientConnection(_ context.Context) (*grpc.ClientConn, 
 
 	return d.iamClientConnection, nil
 }
+
 func (d *diContainer) InventoryV1API(ctx context.Context) (inventory_v1.InventoryServiceServer, error) {
 	if d.inventoryV1API == nil {
 		service, err := d.InventoryService(ctx)

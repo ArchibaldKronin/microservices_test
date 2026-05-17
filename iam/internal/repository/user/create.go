@@ -5,13 +5,12 @@ import (
 	"errors"
 
 	"github.com/ArchibaldKronin/microservices_test/iam/internal/model"
+	def "github.com/ArchibaldKronin/microservices_test/iam/internal/repository"
 	"github.com/ArchibaldKronin/microservices_test/iam/internal/repository/converter"
 	repoModel "github.com/ArchibaldKronin/microservices_test/iam/internal/repository/model"
-	"github.com/jackc/pgx/v5/pgconn"
-
-	def "github.com/ArchibaldKronin/microservices_test/iam/internal/repository"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
 )
 
