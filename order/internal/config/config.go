@@ -26,6 +26,8 @@ type config struct {
 	OrderAssembledConsumer OrderAssembledConsumerConfig
 
 	Tracing TracingConfig
+
+	Metrics MetricsConfig
 }
 
 func Load(path ...string) error {
@@ -83,6 +85,11 @@ func Load(path ...string) error {
 		return err
 	}
 
+	metricCfg, err := env.NewMetricsConfig()
+	if err != nil {
+		return err
+	}
+
 	appConfig = &config{
 		Logger:                 loggerCfg,
 		InventoryGRPCClient:    inventoryClientCfg,
@@ -94,6 +101,7 @@ func Load(path ...string) error {
 		OrderAssembledConsumer: orderAssembledConsumerCfg,
 		IamConfig:              iamClientCfg,
 		Tracing:                tracingCfg,
+		Metrics:                metricCfg,
 	}
 
 	return nil

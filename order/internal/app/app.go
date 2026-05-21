@@ -10,8 +10,10 @@ import (
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/api/health"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/config"
+	"github.com/ArchibaldKronin/microservices_test/order/internal/metrics"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	metricsProvider "github.com/ArchibaldKronin/microservices_test/platform/pkg/metrics"
 	pgMigrator "github.com/ArchibaldKronin/microservices_test/platform/pkg/migrator/pg"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
 	order_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
@@ -85,6 +87,8 @@ func (a *App) initDeps(ctx context.Context) error {
 		a.initDi,
 		a.initCloser,
 		a.initTracer,
+		a.initMetricsProvider,
+		a.initMetrics,
 		a.initPg,
 		a.initMigrator,
 		a.initInventoryConnection,
@@ -142,6 +146,28 @@ func (a *App) initTracer(ctx context.Context) error {
 	}
 
 	closer.AddNamed("tracer", tracing.ShutdownTracer)
+
+	return nil
+}
+
+func (a *App) initMetricsProvider(ctx context.Context) error {
+	err := metricsProvider.InitProvider(ctx, config.AppConfig().Metrics)
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации OTEL metrics provider", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed("metrics", metricsProvider.Shutdown)
+
+	return nil
+}
+
+func (a *App) initMetrics(ctx context.Context) error {
+	err := metrics.InitMetrics()
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации metrics", zap.Error(err))
+		return err
+	}
 
 	return nil
 }

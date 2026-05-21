@@ -59,3 +59,9 @@ type TracingConfig interface {
 	Environment() string
 	ServiceVersion() string
 }
+
+type MetricsConfig interface {
+	CollectorEndpoint() string
+	CollectorInterval() time.Duration
+	ServiceName() string
+}

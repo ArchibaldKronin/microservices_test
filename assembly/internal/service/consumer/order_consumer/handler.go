@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ArchibaldKronin/microservices_test/assembly/internal/model"
+	"github.com/ArchibaldKronin/microservices_test/assembly/internal/service/metrics"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/kafka/consumer"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	"github.com/google/uuid"
@@ -26,14 +27,14 @@ func (c *service) orderPaidHandler(ctx context.Context, msg consumer.Message) er
 		logger.Error(ctx, "Failed to generate random bigInt", zap.Error(err))
 		return err
 	}
+
+	// засекаем время сборки
+	startAssembling := time.Now()
+
 	delayMillisec := time.Millisecond * time.Duration(bigInt.Int64())
-	// ctx, cancel := context.WithTimeout(ctx, delayMillisec)
-	// defer cancel()
 
 	delaySec := int64(delayMillisec.Seconds())
-	// delaySec := int64(math.Round(float64(delayMillisec) / 1000_000_000))
 
-	// <-ctx.Done()
 	time.Sleep(delayMillisec)
 
 	eventId := uuid.NewString()
@@ -48,5 +49,9 @@ func (c *service) orderPaidHandler(ctx context.Context, msg consumer.Message) er
 		return fmt.Errorf("error in consumer handler: %w", err)
 	}
 
+	// останавливаем таймер сборки
+	durationAssemnbling := time.Since(startAssembling)
+	//записываем метрику
+	metrics.AppendAssemblyDurationSecondsMetric(ctx, durationAssemnbling)
 	return nil
 }

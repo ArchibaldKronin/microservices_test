@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ArchibaldKronin/microservices_test/order/internal/metrics"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	repoModel "github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
@@ -88,6 +89,9 @@ func (s *service) PayOrder(ctx context.Context, orderId string, pm model.Payment
 		}
 
 		result = transId
+
+		metrics.IncrOrdersRevenueTotalMetric(ctx, order.TotalPrice)
+
 		return nil
 	})
 	if err != nil {

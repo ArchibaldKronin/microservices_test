@@ -3,6 +3,7 @@ package order
 import (
 	"context"
 
+	"github.com/ArchibaldKronin/microservices_test/order/internal/metrics"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
@@ -32,6 +33,8 @@ func (s *service) CreateOrder(ctx context.Context, userId string, partIds []stri
 		"Order created",
 		zap.String("order_id", order.OrderID),
 	)
+
+	metrics.IncrOrdersTotalMetric(ctx)
 
 	return order, nil
 }
