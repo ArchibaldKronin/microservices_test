@@ -40,13 +40,13 @@ type logger struct {
 	zapLogger *zap.Logger
 }
 
-func Init(levelStr string, config initConfig) error {
+func Init(ctx context.Context, levelStr string, config initConfig) error {
 	// func Init(levelStr string, asJSON, enableOTLP bool) error {
 	var zapLogger *zap.Logger
 	initOnce.Do(func() {
 		dynamicLevel = zap.NewAtomicLevelAt(parseLevel(levelStr))
 
-		cores := buildCores(config)
+		cores := buildCores(ctx, config)
 		// cores := buildCores(config.AsJSON(), config.EnableOTLP())
 
 		zapLogger = zap.New(zapcore.NewTee(cores...), zap.AddCaller(), zap.AddCallerSkip(2))
@@ -65,14 +65,14 @@ func Init(levelStr string, config initConfig) error {
 
 // buildCores создает слайс cores для zapcore.Tee.
 // Всегда включает stdout core, опционально добавляет OTLP core.
-func buildCores(config initConfig) []zapcore.Core {
+func buildCores(ctx context.Context, config initConfig) []zapcore.Core {
 	// func buildCores(asJSON bool, enableOTLP bool) []zapcore.Core {
 	cores := []zapcore.Core{
 		createStdoutCore(config.AsJSON()),
 	}
 
 	if config.EnableOTLP() {
-		if otlpCore := createOTLPCore(config); otlpCore != nil {
+		if otlpCore := createOTLPCore(ctx, config); otlpCore != nil {
 			cores = append(cores, otlpCore)
 		}
 	}
@@ -96,8 +96,8 @@ func createStdoutCore(asJSON bool) zapcore.Core {
 
 // createOTLPCore создает core для отправки в OpenTelemetry коллектор.
 // При ошибке подключения возвращает nil (graceful degradation).
-func createOTLPCore(config initConfig) *SimpleOTLPCore {
-	otlpLogger, err := createOTLPLogger(config)
+func createOTLPCore(ctx context.Context, config initConfig) *SimpleOTLPCore {
+	otlpLogger, err := createOTLPLogger(ctx, config)
 	if err != nil {
 		// Логирование ошибки невозможно, так как логгер еще не инициализирован
 		return nil
@@ -109,9 +109,7 @@ func createOTLPCore(config initConfig) *SimpleOTLPCore {
 
 // createOTLPLogger создает OTLP логгер с настроенным экспортером и ресурсами.
 // Использует BatchProcessor для эффективной отправки логов.
-func createOTLPLogger(config initConfig) (otelLog.Logger, error) {
-	ctx := context.Background()
-
+func createOTLPLogger(ctx context.Context, config initConfig) (otelLog.Logger, error) {
 	exporter, err := createOTLPExporter(ctx, config.OTLPAddress())
 	if err != nil {
 		return nil, err
@@ -221,9 +219,9 @@ func Sync() error {
 
 // Close корректно завершает работу логгера.
 // Останавливает OTLP provider с таймаутом для отправки оставшихся логов.
-func Close() error {
+func Close(ctx context.Context) error {
 	if otelProvider != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 		defer cancel()
 		_ = otelProvider.Shutdown(ctx) //nolint:gosec
 	}

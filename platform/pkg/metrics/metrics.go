@@ -48,6 +48,9 @@ func InitProvider(ctx context.Context, cfg Config) error {
 			semconv.ServiceName(cfg.ServiceName()),
 		),
 	)
+	if err != nil {
+		return errors.Wrap(err, "failed to create metrics resources")
+	}
 
 	// Создаем провайдер метрик
 	meterProvider = metric.NewMeterProvider(

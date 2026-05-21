@@ -36,7 +36,7 @@ func TestIntegration(t *testing.T) {
 var _ = BeforeSuite(func() {
 	loggerCfg, _ := envCfg.NoopLoggerConfig()
 
-	err := logger.Init(loggerLevelValue, loggerCfg)
+	err := logger.Init(suiteCtx, loggerLevelValue, loggerCfg)
 	if err != nil {
 		panic(fmt.Sprintf("не удалось инициализировать логгер: %v", err))
 	}

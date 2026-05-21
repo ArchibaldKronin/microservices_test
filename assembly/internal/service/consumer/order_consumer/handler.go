@@ -33,9 +33,12 @@ func (c *service) orderPaidHandler(ctx context.Context, msg consumer.Message) er
 
 	delayMillisec := time.Millisecond * time.Duration(bigInt.Int64())
 
-	delaySec := int64(delayMillisec.Seconds())
+	ctx, cancel := context.WithTimeout(ctx, delayMillisec)
+	defer cancel()
 
-	time.Sleep(delayMillisec)
+	<-ctx.Done()
+
+	delaySec := int64(delayMillisec.Seconds())
 
 	eventId := uuid.NewString()
 	err = c.assembleProducerService.ProduceShipAssembled(ctx, model.ShipAssembledEvent{
@@ -51,7 +54,7 @@ func (c *service) orderPaidHandler(ctx context.Context, msg consumer.Message) er
 
 	// останавливаем таймер сборки
 	durationAssemnbling := time.Since(startAssembling)
-	//записываем метрику
+	// записываем метрику
 	metrics.AppendAssemblyDurationSecondsMetric(ctx, durationAssemnbling)
 	return nil
 }

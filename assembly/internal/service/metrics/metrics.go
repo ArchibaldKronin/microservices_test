@@ -14,10 +14,8 @@ const (
 
 var meter = otel.Meter(serviceName)
 
-var (
-	// assemblyDurationSeconds Гистограмма длительности сборки
-	assemblyDurationSeconds metric.Float64Histogram
-)
+// assemblyDurationSeconds Гистограмма длительности сборки
+var assemblyDurationSeconds metric.Float64Histogram
 
 func InitMetrics() error {
 	var err error

@@ -63,8 +63,8 @@ func (a *App) initDi(_ context.Context) error {
 	return nil
 }
 
-func (a *App) initLogger(_ context.Context) error {
-	err := logger.Init(
+func (a *App) initLogger(ctx context.Context) error {
+	err := logger.Init(ctx,
 		config.AppConfig().Logger.Level(),
 		config.AppConfig().Logger,
 	)
@@ -74,8 +74,8 @@ func (a *App) initLogger(_ context.Context) error {
 	}
 
 	closer.AddNamed("Logger", func(ctx context.Context) error {
-		_ = logger.Sync()
-		_ = logger.Close()
+		_ = logger.Sync()     //nolint:gosec
+		_ = logger.Close(ctx) //nolint:gosec
 		return nil
 	})
 
