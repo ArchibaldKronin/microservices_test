@@ -8,12 +8,22 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/order/internal/repository"
 	repoModel "github.com/ArchibaldKronin/microservices_test/order/internal/repository/model"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
 func (s *service) PayOrder(ctx context.Context, orderId string, pm model.PaymentMethod) (string, error) {
 	var result string
+
+	ctx, span := tracing.StartSpan(ctx, "order.pay_order",
+		trace.WithAttributes(
+			attribute.String("order_id", orderId),
+			attribute.String("payment_method", string(pm)),
+		))
+	defer span.End()
 
 	err := s.txManager.WithTransaction(ctx, func(executer repository.OrderRepository) error {
 		order, err := executer.GetOrder(ctx, orderId)
@@ -81,6 +91,7 @@ func (s *service) PayOrder(ctx context.Context, orderId string, pm model.Payment
 		return nil
 	})
 	if err != nil {
+		span.RecordError(err)
 		return "", err
 	}
 

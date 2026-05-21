@@ -11,6 +11,7 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/grpc/health"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
 	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -44,6 +45,7 @@ func (a *App) initDeps(ctx context.Context) error {
 		a.initDI,
 		a.initLogger,
 		a.initCloser,
+		a.initTracer,
 		a.initMongo,
 		a.initAuthInterceptor,
 		a.initListener,
@@ -97,6 +99,18 @@ func (a *App) initMongo(ctx context.Context) error {
 	}
 
 	closer.AddNamed("MongoDB client", client.Disconnect)
+
+	return nil
+}
+
+func (a *App) initTracer(ctx context.Context) error {
+	err := tracing.InitTracer(ctx, config.AppConfig().Tracing)
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации OTEL tracer", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed("tracer", tracing.ShutdownTracer)
 
 	return nil
 }
@@ -162,9 +176,9 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 		grpc.Creds(insecure.NewCredentials()),
 		grpc.ChainUnaryInterceptor(
 			authInterceptor.Unary(),
+			tracing.UnaryServerInterceptor("inventory-service"),
 		),
 	)
-	// a.grpcServer = grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
 
 	closer.AddNamed(
 		"gRPC server",

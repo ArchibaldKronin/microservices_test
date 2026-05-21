@@ -27,3 +27,10 @@ type RedisConfig interface {
 	IdleTimeout() time.Duration
 	CacheTTL() time.Duration
 }
+
+type TracingConfig interface {
+	CollectorEndpoint() string
+	ServiceName() string
+	Environment() string
+	ServiceVersion() string
+}

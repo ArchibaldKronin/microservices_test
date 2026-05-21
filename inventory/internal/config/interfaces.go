@@ -21,3 +21,10 @@ type MongoConfig interface {
 	URI() string
 	DatabaseName() string
 }
+
+type TracingConfig interface {
+	CollectorEndpoint() string
+	ServiceName() string
+	Environment() string
+	ServiceVersion() string
+}

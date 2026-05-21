@@ -5,6 +5,9 @@ import (
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/model"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -34,6 +37,13 @@ func (s *service) CreateOrder(ctx context.Context, userId string, partIds []stri
 }
 
 func (s *service) getPartsInfo(ctx context.Context, partIds []string) ([]string, float64, error) {
+	// Создаем спан для вызова Inventory сервиса
+	ctx, span := tracing.StartSpan(ctx, "order.call_inventory",
+		trace.WithAttributes(
+			attribute.StringSlice("parts_IDs", partIds)),
+	)
+	defer span.End()
+
 	parts, err := s.inventoryClient.ListParts(
 		ctx,
 		model.PartsFilter{
@@ -41,11 +51,13 @@ func (s *service) getPartsInfo(ctx context.Context, partIds []string) ([]string,
 		},
 	)
 	if err != nil {
+		span.RecordError(err)
 		return nil, 0, err
 	}
 
 	if len(partIds) != 0 {
 		if len(parts) != len(partIds) {
+			span.RecordError(err)
 			return nil, 0, model.ErrNotFound
 		}
 	}
@@ -56,6 +68,10 @@ func (s *service) getPartsInfo(ctx context.Context, partIds []string) ([]string,
 		ids = append(ids, part.Uuid)
 		totalPrice += part.Price
 	}
+
+	span.SetAttributes(
+		attribute.Float64("total_price", totalPrice),
+	)
 
 	return ids, totalPrice, nil
 }

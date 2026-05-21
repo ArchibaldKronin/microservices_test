@@ -13,6 +13,7 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	pgMigrator "github.com/ArchibaldKronin/microservices_test/platform/pkg/migrator/pg"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
 	order_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -83,6 +84,7 @@ func (a *App) initDeps(ctx context.Context) error {
 		a.initLogger,
 		a.initDi,
 		a.initCloser,
+		a.initTracer,
 		a.initPg,
 		a.initMigrator,
 		a.initInventoryConnection,
@@ -129,6 +131,18 @@ func (a *App) initDi(_ context.Context) error {
 
 func (a *App) initCloser(_ context.Context) error {
 	closer.SetLogger(logger.Logger())
+	return nil
+}
+
+func (a *App) initTracer(ctx context.Context) error {
+	err := tracing.InitTracer(ctx, config.AppConfig().Tracing)
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации OTEL tracer", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed("tracer", tracing.ShutdownTracer)
+
 	return nil
 }
 
@@ -257,23 +271,12 @@ func (a *App) initOrderServer(ctx context.Context) error {
 }
 
 func (a *App) initHTTPServer(ctx context.Context) error {
-	// inventoryCon, err := a.diContainer.InventoryClientConnection(ctx)
-	// if err != nil {
-	// 	logger.Error(ctx, "❌ ошибка получения клиента Inventory", zap.Error(err))
-	// 	return err
-	// }
-
-	// paymentCon, err := a.diContainer.PaymentClientConnection(ctx)
-	// if err != nil {
-	// 	logger.Error(ctx, "❌ ошибка получения клиента Payment", zap.Error(err))
-	// 	return err
-	// }
-
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(requestProcessingTimeout))
+	r.Use(tracing.HTTPHandlerMiddleware("order-service"))
 	r.Use(a.diContainer.authMiddleware.Handle)
 
 	r.Get("/health", health.HealthCheck)
@@ -281,8 +284,6 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 		a.diContainer.pgPool,
 		a.diContainer.connectionInventory,
 		a.diContainer.connectionPayment,
-		// inventoryCon,
-		// paymentCon,
 	))
 
 	r.Mount("/", a.orderServer)

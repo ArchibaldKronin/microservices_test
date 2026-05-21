@@ -10,6 +10,7 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/inventory/internal/service"
 	inventoryService "github.com/ArchibaldKronin/microservices_test/inventory/internal/service/part"
 	grpcInterceptors "github.com/ArchibaldKronin/microservices_test/platform/pkg/middleware/grpc"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
 	auth_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/auth/v1"
 	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -68,6 +69,7 @@ func (d *diContainer) IamClientConnection(_ context.Context) (*grpc.ClientConn, 
 		connIam, err := grpc.NewClient(
 			config.AppConfig().IamConfig.Address(),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithUnaryInterceptor(tracing.UnaryClientInterceptor("iam-service")),
 		)
 		if err != nil {
 			return nil, err
