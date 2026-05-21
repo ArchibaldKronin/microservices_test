@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	envCfg "github.com/ArchibaldKronin/microservices_test/inventory/internal/config/env"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/testcontainers/path"
 	"github.com/joho/godotenv"
@@ -33,7 +34,9 @@ func TestIntegration(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	err := logger.Init(loggerLevelValue, true)
+	loggerCfg, _ := envCfg.NoopLoggerConfig()
+
+	err := logger.Init(loggerLevelValue, loggerCfg)
 	if err != nil {
 		panic(fmt.Sprintf("не удалось инициализировать логгер: %v", err))
 	}

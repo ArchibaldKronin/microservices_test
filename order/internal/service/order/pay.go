@@ -84,5 +84,11 @@ func (s *service) PayOrder(ctx context.Context, orderId string, pm model.Payment
 		return "", err
 	}
 
+	logger.Info(
+		ctx,
+		"Order paid",
+		zap.String("order_id", orderId),
+	)
+
 	return result, nil
 }

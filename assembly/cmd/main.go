@@ -32,6 +32,11 @@ func main() {
 	defer appCancel()
 	defer gracefulShutdown()
 
+	// closer.Configure(
+	// 	syscall.SIGINT,
+	// 	syscall.SIGTERM,
+	// )
+
 	app, err := app.New(appCtx)
 	if err != nil {
 		logger.Error(appCtx, "❌ Не удалось создать приложение", zap.Error(err))
@@ -43,10 +48,13 @@ func main() {
 		logger.Error(appCtx, "❌ Ошибка при работе приложения", zap.Error(err))
 		return
 	}
+
+	<-appCtx.Done()
+	logger.Info(appCtx, "🛑 Получен системный сигнал, начинаем graceful shutdown...")
 }
 
 func gracefulShutdown() {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
 	defer cancel()
 
 	if err := closer.CloseAll(ctx); err != nil {

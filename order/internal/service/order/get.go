@@ -21,5 +21,11 @@ func (s *service) GetOrder(ctx context.Context, orderId string) (order *model.Or
 		return nil, model.ErrInternal
 	}
 
+	logger.Info(
+		ctx,
+		"Get order",
+		zap.String("order_id", order.OrderID),
+	)
+
 	return order, nil
 }

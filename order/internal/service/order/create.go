@@ -24,6 +24,12 @@ func (s *service) CreateOrder(ctx context.Context, userId string, partIds []stri
 		return nil, model.ErrInternal
 	}
 
+	logger.Info(
+		ctx,
+		"Order created",
+		zap.String("order_id", order.OrderID),
+	)
+
 	return order, nil
 }
 

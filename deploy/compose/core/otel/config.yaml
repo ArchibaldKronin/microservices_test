@@ -1,0 +1,173 @@
+# Приемники
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:${env:OTEL_INTERNAL_GRPC_PORT}
+        # endpoint: ${env:OTLP_ENDPOINT:-0.0.0.0:4317}
+
+# Обработчики
+processors:
+
+# processors:
+#   batch/logs:
+#     timeout: 5s
+#     send_batch_size: 1000
+
+#   batch/traces:
+#     timeout: 1s
+#     send_batch_size: 200
+
+#   resource/logs:
+#     attributes:
+#       - key: deployment.environment
+#         value: dev
+#         action: insert
+
+#   resource/traces:
+#     attributes:
+#       - key: deployment.environment
+#         value: dev
+#         action: insert
+#       - key: collector.name
+#         value: otel-main
+#         action: insert
+
+  batch/traces:
+    # Максимальный размер пакета (количество элементов)
+    send_batch_size: 1000
+    # Максимальное время ожидания перед отправкой неполного пакета
+    timeout: 10s
+    # Максимальное кол-во отправляемых элементов за один раз
+    send_batch_max_size: 1000
+
+  # Вероятностное семплирование - этот процессор управляет объемом собираемых данных
+  # Применяется только к трейсам в соответствующем пайплайне
+  probabilistic_sampler:
+    # Процент трейсов, которые будут сохранены
+    # 100% означает сохранение всех данных (хорошо для разработки)
+    # В продакшене рекомендуется более низкий процент (1-10%) для снижения нагрузки
+    sampling_percentage: 100
+
+  batch/metrics:
+    send_batch_size: 1000      # Размер пакета (количество элементов)
+    timeout: 10s               # Максимальное время ожидания перед отправкой
+    send_batch_max_size: 1000  # Максимальный размер пакета
+
+  # RESOURCE PROCESSOR - обогащение метаданными на уровне ресурса
+  # Добавляет информацию о сервисе ко всем логам
+  resource/logs:
+    attributes:
+      # НЕ переопределяем service.name в коллекторе, чтобы поддерживать несколько сервисов
+      # Каждый сервис должен задавать service.name на стороне приложения
+
+      # DEPLOYMENT ENVIRONMENT: окружение развертывания
+      # Помогает различать логи из dev/staging/production
+      - key: deployment.environment  
+        value: dev
+        action: insert  # добавляем только если атриб
+
+  # BATCH PROCESSOR - группировка данных для эффективной отправки
+  # Собирает логи в батчи перед отправкой в Elasticsearch
+  batch/logs:
+    # РАЗМЕР БАТЧА: отправляем, когда накопится 1000 записей
+    # Большие батчи = выше throughput, но больше latency
+    send_batch_size: 1000
+    
+    # ТАЙМАУТ: отправляем принудительно через 5 секунд
+    # Гарантирует, что логи не застрянут надолго в буфере
+    timeout: 5s
+
+# экспортеры (отправка данных во внешние системы)
+exporters:
+  # Экспорт трейсов в Jaeger
+  otlp/jaeger:
+    endpoint: ${env:JAEGER_CONTAINER_NAME}:${env:JAEGER_INTERNAL_GRPC_PORT} # Эндпоинт Jaeger, принимающий OTLP формат
+    # Коллектор отправляет данные в Jaeger по gRPC
+    # Jaeger слушает на порту 4317 для приема данных от коллектора
+    tls:
+      insecure: true # Отключение TLS для локальной разработки
+  
+  # Экспорт данных в логи - полезно для отладки
+  debug:
+    # Уровень детализации логов
+    verbosity: detailed
+
+  prometheusremotewrite:
+    endpoint: http://${env:PROMETHEUS_CONTAINER_NAME}:${env:PROMETHEUS_INTERNAL_HTTP_PORT}/api/v1/write
+
+  elasticsearch:
+    endpoints: ["http://${env:ELASTICSEARCH_CONTAINER_NAME}:${env:ELASTICSEARCH_INTERNAL_HTTP_PORT}"]
+
+    tls:
+      insecure: true
+  
+    logs_index: "microservices-logs"
+
+    # MAPPING: настройки индексации данных
+    mapping:
+      mode: ecs
+      
+    retry:
+      enabled: true               # включить повторные попытки
+      # max_retries
+      max_retries: 5             # максимум попыток
+      initial_interval: 100ms     # начальная задержка
+      
+    timeout: 90s                  # таймаут HTTP запроса
+    compression: gzip             # сжатие данных
+  
+# Расширения
+extensions:
+  health_check:
+    # ENDPOINT: адрес для health check запросов
+    endpoint: 0.0.0.0:13133
+    
+# Service определяет, как работает сам коллектор
+service:
+  # TELEMETRY: собственная телеметрия коллектора
+  telemetry:
+    metrics:
+      # АДРЕС МЕТРИК: эндпоинт для собственных метрик коллектора
+      # Метрики в формате Prometheus доступны на localhost:8888/metrics
+      # address: 0.0.0.0:8888
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+  extensions: [health_check]
+
+  # PIPELINES: определяем потоки обработки данных
+  pipelines:
+
+  # pipelines:
+    # logs:
+    #   processors: [resource/logs, batch/logs]
+
+    # traces:
+    #   processors: [resource/traces, batch/traces]
+
+    # LOGS PIPELINE: обработка логов
+    logs:
+      receivers: [otlp]                    # принимаем от OTLP gRPC
+      processors: [resource/logs, batch/logs]       # обогащаем метаданными, группируем в батчи  
+      exporters: [elasticsearch]          # отправляем в Elasticsearch
+
+    metrics:
+      # Источники метрик
+      receivers: [otlp]
+      # Обработчики (применяются в указанном порядке)
+      processors: [batch/metrics]
+      # Назначения для экспорта
+      exporters: [prometheusremotewrite]
+
+    traces:
+      # Используемые приемники данных
+      receivers: [otlp]
+      # Последовательность обработчиков для трансформации данных
+      # ВАЖНО: сначала семплируем (отбрасываем лишние), потом батчуем (группируем нужные)
+      processors: [probabilistic_sampler, batch/traces]
+      # Куда отправлять обработанные трейсы
+      exporters: [otlp/jaeger, debug]

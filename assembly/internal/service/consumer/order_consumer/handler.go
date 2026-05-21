@@ -27,13 +27,14 @@ func (c *service) orderPaidHandler(ctx context.Context, msg consumer.Message) er
 		return err
 	}
 	delayMillisec := time.Millisecond * time.Duration(bigInt.Int64())
-	ctx, cancel := context.WithTimeout(ctx, delayMillisec)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(ctx, delayMillisec)
+	// defer cancel()
 
 	delaySec := int64(delayMillisec.Seconds())
 	// delaySec := int64(math.Round(float64(delayMillisec) / 1000_000_000))
 
-	<-ctx.Done()
+	// <-ctx.Done()
+	time.Sleep(delayMillisec)
 
 	eventId := uuid.NewString()
 	err = c.assembleProducerService.ProduceShipAssembled(ctx, model.ShipAssembledEvent{
