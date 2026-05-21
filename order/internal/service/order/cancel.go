@@ -56,5 +56,12 @@ func (s *service) CancelOrder(ctx context.Context, orderId string) error {
 	if err != nil {
 		return err
 	}
+
+	logger.Info(
+		ctx,
+		"Order canceled",
+		zap.String("order_id", orderId),
+	)
+
 	return nil
 }

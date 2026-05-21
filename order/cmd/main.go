@@ -32,10 +32,10 @@ func main() {
 	defer appCancel()
 	defer gracefulShutdown()
 
-	// closer.Configure(
-	// 	syscall.SIGINT,
-	// 	syscall.SIGTERM,
-	// )
+	closer.Configure(
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
 
 	app, err := app.New(appCtx)
 	if err != nil {
@@ -51,7 +51,7 @@ func main() {
 }
 
 func gracefulShutdown() {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
 	defer cancel()
 
 	if err := closer.CloseAll(ctx); err != nil {

@@ -5,6 +5,10 @@ import "time"
 type LoggerConfig interface {
 	Level() string
 	AsJSON() bool
+	OTLPAddress() string
+	ServiceName() string
+	ServiceEnvironment() string
+	EnableOTLP() bool
 }
 
 type GRPCConfig interface {
@@ -22,4 +26,11 @@ type RedisConfig interface {
 	MaxIdle() int
 	IdleTimeout() time.Duration
 	CacheTTL() time.Duration
+}
+
+type TracingConfig interface {
+	CollectorEndpoint() string
+	ServiceName() string
+	Environment() string
+	ServiceVersion() string
 }

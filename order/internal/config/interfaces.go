@@ -9,6 +9,10 @@ import (
 type LoggerConfig interface {
 	Level() string
 	AsJSON() bool
+	OTLPAddress() string
+	ServiceName() string
+	ServiceEnvironment() string
+	EnableOTLP() bool
 }
 
 type OrderHTTPConfigConfig interface {
@@ -47,4 +51,17 @@ type OrderAssembledConsumerConfig interface {
 	Topic() string
 	GroupID() string
 	Config() *sarama.Config
+}
+
+type TracingConfig interface {
+	CollectorEndpoint() string
+	ServiceName() string
+	Environment() string
+	ServiceVersion() string
+}
+
+type MetricsConfig interface {
+	CollectorEndpoint() string
+	CollectorInterval() time.Duration
+	ServiceName() string
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/grpc/health"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	pgMigrator "github.com/ArchibaldKronin/microservices_test/platform/pkg/migrator/pg"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
 	auth_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/auth/v1"
 	user_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/user/v1"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -48,6 +49,7 @@ func (a *App) initDeps(ctx context.Context) error {
 		a.initLogger,
 		a.initDI,
 		a.initCloser,
+		a.initTracer,
 		a.initPostgres,
 		a.initMigrator,
 		a.initRedis,
@@ -66,15 +68,22 @@ func (a *App) initDeps(ctx context.Context) error {
 }
 
 func (a *App) initLogger(ctx context.Context) error {
-	err := logger.Init(
+	err := logger.Init(ctx,
 		config.AppConfig().Logger.Level(),
-		config.AppConfig().Logger.AsJSON(),
+		config.AppConfig().Logger,
 	)
 	if err != nil {
 		log.Printf("❌ logger init failed: %v; using noop logger", err)
 		logger.SetNopLogger()
 		return err
 	}
+
+	closer.AddNamed("Logger", func(ctx context.Context) error {
+		_ = logger.Sync()     //nolint:gosec
+		_ = logger.Close(ctx) //nolint:gosec
+		return nil
+	})
+
 	return nil
 }
 
@@ -85,6 +94,18 @@ func (a *App) initDI(ctx context.Context) error {
 
 func (a *App) initCloser(ctx context.Context) error {
 	closer.SetLogger(logger.Logger())
+	return nil
+}
+
+func (a *App) initTracer(ctx context.Context) error {
+	err := tracing.InitTracer(ctx, config.AppConfig().Tracing)
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации OTEL tracer", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed("tracer", tracing.ShutdownTracer)
+
 	return nil
 }
 
@@ -171,7 +192,10 @@ func (a *App) initListener(ctx context.Context) error {
 }
 
 func (a *App) initGRPCServer(ctx context.Context) error {
-	a.grpcServer = grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
+	a.grpcServer = grpc.NewServer(
+		grpc.Creds(insecure.NewCredentials()),
+		grpc.ChainUnaryInterceptor(tracing.UnaryServerInterceptor("iam-service")),
+	)
 
 	closer.AddNamed(
 		"gRPC server",

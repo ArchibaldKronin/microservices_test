@@ -5,8 +5,11 @@ import (
 	"log"
 
 	"github.com/ArchibaldKronin/microservices_test/assembly/internal/config"
+	"github.com/ArchibaldKronin/microservices_test/assembly/internal/service/metrics"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	metricsProvider "github.com/ArchibaldKronin/microservices_test/platform/pkg/metrics"
+	"go.uber.org/zap"
 )
 
 type App struct {
@@ -32,6 +35,8 @@ func (a *App) initDeps(ctx context.Context) error {
 		a.initLogger,
 		a.initDi,
 		a.initCloser,
+		a.initMetricsProvider,
+		a.initMetrics,
 	}
 
 	for _, f := range inits {
@@ -46,15 +51,22 @@ func (a *App) initDeps(ctx context.Context) error {
 }
 
 func (a *App) initLogger(ctx context.Context) error {
-	err := logger.Init(
+	err := logger.Init(ctx,
 		config.AppConfig().Logger.Level(),
-		config.AppConfig().Logger.AsJSON(),
+		config.AppConfig().Logger,
 	)
 	if err != nil {
 		log.Printf("❌ logger init failed: %v; using noop logger", err)
 		logger.SetNopLogger()
 		return err
 	}
+
+	closer.AddNamed("Logger", func(ctx context.Context) error {
+		_ = logger.Sync()     //nolint:gosec
+		_ = logger.Close(ctx) //nolint:gosec
+		return nil
+	})
+
 	return nil
 }
 
@@ -65,6 +77,28 @@ func (a *App) initDi(ctx context.Context) error {
 
 func (a *App) initCloser(ctx context.Context) error {
 	closer.SetLogger(logger.Logger())
+	return nil
+}
+
+func (a *App) initMetricsProvider(ctx context.Context) error {
+	err := metricsProvider.InitProvider(ctx, config.AppConfig().Metrics)
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации OTEL metrics provider", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed("metrics", metricsProvider.Shutdown)
+
+	return nil
+}
+
+func (a *App) initMetrics(ctx context.Context) error {
+	err := metrics.InitMetrics()
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации metrics", zap.Error(err))
+		return err
+	}
+
 	return nil
 }
 

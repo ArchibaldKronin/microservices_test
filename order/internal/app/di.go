@@ -25,6 +25,7 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	authMiddlewarePackage "github.com/ArchibaldKronin/microservices_test/platform/pkg/middleware/http"
 	kafkaMiddleware "github.com/ArchibaldKronin/microservices_test/platform/pkg/middleware/kafka"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
 	def "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
 	auth_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/auth/v1"
 	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
@@ -105,6 +106,7 @@ func (d *diContainer) IamClientConnection(_ context.Context) (*grpc.ClientConn, 
 		connIam, err := grpc.NewClient(
 			config.AppConfig().IamConfig.Address(),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithUnaryInterceptor(tracing.UnaryClientInterceptor("iam-service")),
 		)
 		if err != nil {
 			return nil, err
@@ -238,6 +240,7 @@ func (d *diContainer) InventoryClientConnection(_ context.Context) (*grpc.Client
 		connInventory, err := grpc.NewClient(
 			config.AppConfig().InventoryGRPCClient.Address(),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithUnaryInterceptor(tracing.UnaryClientInterceptor("inventory-service")),
 		)
 		if err != nil {
 			return nil, err
@@ -267,6 +270,7 @@ func (d *diContainer) PaymentClientConnection(_ context.Context) (*grpc.ClientCo
 		connPayment, err := grpc.NewClient(
 			config.AppConfig().PaymentGRPCClient.Address(),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithUnaryInterceptor(tracing.UnaryClientInterceptor("payment-service")),
 		)
 		if err != nil {
 			return nil, err

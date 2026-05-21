@@ -112,15 +112,22 @@ func (a *App) initDeps(ctx context.Context) error {
 }
 
 func (a *App) initLogger(ctx context.Context) error {
-	err := logger.Init(
+	err := logger.Init(ctx,
 		config.AppConfig().Logger.Level(),
-		config.AppConfig().Logger.AsJSON(),
+		config.AppConfig().Logger,
 	)
 	if err != nil {
 		log.Printf("❌ logger init failed: %v; using noop logger", err)
 		logger.SetNopLogger()
 		return err
 	}
+
+	closer.AddNamed("Logger", func(ctx context.Context) error {
+		_ = logger.Sync()     //nolint:gosec
+		_ = logger.Close(ctx) //nolint:gosec
+		return nil
+	})
+
 	return nil
 }
 

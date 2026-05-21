@@ -10,9 +10,12 @@ import (
 
 	"github.com/ArchibaldKronin/microservices_test/order/internal/api/health"
 	"github.com/ArchibaldKronin/microservices_test/order/internal/config"
+	"github.com/ArchibaldKronin/microservices_test/order/internal/metrics"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/closer"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
+	metricsProvider "github.com/ArchibaldKronin/microservices_test/platform/pkg/metrics"
 	pgMigrator "github.com/ArchibaldKronin/microservices_test/platform/pkg/migrator/pg"
+	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
 	order_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/openapi/order/v1"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -83,6 +86,9 @@ func (a *App) initDeps(ctx context.Context) error {
 		a.initLogger,
 		a.initDi,
 		a.initCloser,
+		a.initTracer,
+		a.initMetricsProvider,
+		a.initMetrics,
 		a.initPg,
 		a.initMigrator,
 		a.initInventoryConnection,
@@ -102,16 +108,23 @@ func (a *App) initDeps(ctx context.Context) error {
 	return nil
 }
 
-func (a *App) initLogger(_ context.Context) error {
-	err := logger.Init(
+func (a *App) initLogger(ctx context.Context) error {
+	err := logger.Init(ctx,
 		config.AppConfig().Logger.Level(),
-		config.AppConfig().Logger.AsJSON(),
+		config.AppConfig().Logger,
 	)
 	if err != nil {
 		log.Printf("❌ logger init failed: %v; using noop logger", err)
 		logger.SetNopLogger()
 		return err
 	}
+
+	closer.AddNamed("Logger", func(ctx context.Context) error {
+		_ = logger.Sync()     //nolint:gosec
+		_ = logger.Close(ctx) //nolint:gosec
+		return nil
+	})
+
 	return nil
 }
 
@@ -122,6 +135,40 @@ func (a *App) initDi(_ context.Context) error {
 
 func (a *App) initCloser(_ context.Context) error {
 	closer.SetLogger(logger.Logger())
+	return nil
+}
+
+func (a *App) initTracer(ctx context.Context) error {
+	err := tracing.InitTracer(ctx, config.AppConfig().Tracing)
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации OTEL tracer", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed("tracer", tracing.ShutdownTracer)
+
+	return nil
+}
+
+func (a *App) initMetricsProvider(ctx context.Context) error {
+	err := metricsProvider.InitProvider(ctx, config.AppConfig().Metrics)
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации OTEL metrics provider", zap.Error(err))
+		return err
+	}
+
+	closer.AddNamed("metrics", metricsProvider.Shutdown)
+
+	return nil
+}
+
+func (a *App) initMetrics(ctx context.Context) error {
+	err := metrics.InitMetrics()
+	if err != nil {
+		logger.Error(ctx, "❌ Ошибка инициализации metrics", zap.Error(err))
+		return err
+	}
+
 	return nil
 }
 
@@ -250,23 +297,12 @@ func (a *App) initOrderServer(ctx context.Context) error {
 }
 
 func (a *App) initHTTPServer(ctx context.Context) error {
-	// inventoryCon, err := a.diContainer.InventoryClientConnection(ctx)
-	// if err != nil {
-	// 	logger.Error(ctx, "❌ ошибка получения клиента Inventory", zap.Error(err))
-	// 	return err
-	// }
-
-	// paymentCon, err := a.diContainer.PaymentClientConnection(ctx)
-	// if err != nil {
-	// 	logger.Error(ctx, "❌ ошибка получения клиента Payment", zap.Error(err))
-	// 	return err
-	// }
-
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(requestProcessingTimeout))
+	r.Use(tracing.HTTPHandlerMiddleware("order-service"))
 	r.Use(a.diContainer.authMiddleware.Handle)
 
 	r.Get("/health", health.HealthCheck)
@@ -274,8 +310,6 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 		a.diContainer.pgPool,
 		a.diContainer.connectionInventory,
 		a.diContainer.connectionPayment,
-		// inventoryCon,
-		// paymentCon,
 	))
 
 	r.Mount("/", a.orderServer)
