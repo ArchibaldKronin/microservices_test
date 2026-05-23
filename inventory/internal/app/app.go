@@ -13,6 +13,8 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/logger"
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
 	inventory_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -172,10 +174,23 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 	//nolint:gosec
 	authInterceptor, _ := a.diContainer.AuthInterceptor(ctx)
 
+	// a.grpcServer = grpc.NewServer(
+	// 	grpc.Creds(insecure.NewCredentials()),
+	// 	grpc.ChainUnaryInterceptor(
+	// 		authInterceptor.Unary(),
+	// 		tracing.UnaryServerInterceptor("inventory-service"),
+	// 	),
+	// )
+
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
 		grpc.ChainUnaryInterceptor(
-			authInterceptor.Unary(),
+			selector.UnaryServerInterceptor(
+				authInterceptor.Unary(),
+				selector.MatchFunc(func(ctx context.Context, callMeta interceptors.CallMeta) bool {
+					return callMeta.FullMethod() != "/grpc.health.v1.Health/Check" && callMeta.FullMethod() != "/grpc.health.v1.Health/Watch"
+				}),
+			),
 			tracing.UnaryServerInterceptor("inventory-service"),
 		),
 	)

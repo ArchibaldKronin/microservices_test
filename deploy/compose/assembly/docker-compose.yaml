@@ -1,0 +1,22 @@
+services:
+  assembly-service:
+    build:
+      context: ../../..
+      dockerfile: deploy/docker/assembly/Dockerfile
+
+    container_name: assembly-service
+
+    env_file:
+      - .env
+
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+
+    restart: unless-stopped
+
+    networks:
+      - microservices-net
+
+networks:
+  microservices-net:
+    external: true

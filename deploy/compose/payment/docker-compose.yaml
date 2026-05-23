@@ -1,0 +1,30 @@
+services: # Раздел, в котором описываются все контейнеры, необходимые для IAM-сервиса
+
+  payment-service:
+    build:
+      context: ../../..
+      dockerfile: deploy/docker/payment/Dockerfile
+
+    container_name: payment-service
+
+    env_file:
+      - .env
+
+    # ports:
+    #   - ${GRPC_PORT}:50052
+
+    healthcheck:
+      test: ["CMD", "grpc-health-probe", "-addr=localhost:50052"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+    restart: unless-stopped
+
+    networks:
+      - microservices-net
+
+networks:
+  microservices-net:
+    external: true

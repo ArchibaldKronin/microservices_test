@@ -29,12 +29,12 @@ COPY payment ./payment
 COPY platform ./platform
 COPY shared ./shared
 
-# COPY bin/grpc-health-probe ./
 ADD https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.37/grpc_health_probe-linux-amd64 ./grpc-health-probe
 
 RUN chmod +x grpc-health-probe
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app-inventory ./inventory/cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app-payment ./payment/cmd/main.go
+
 
 # ============================
 # Stage 2: Final image
@@ -48,12 +48,10 @@ WORKDIR /app
 
 USER appuser
 
-COPY --from=builder /app/app-inventory .
+COPY --from=builder /app/app-payment .
 
 COPY --from=builder /app/grpc-health-probe /bin/grpc-health-probe
 
-# EXPOSE 50051
+HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD grpc-health-probe -addr=localhost:50052 || exit 1
 
-HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD grpc-health-probe -addr=localhost:50051 || exit 1
-
-ENTRYPOINT [ "./app-inventory" ]
+ENTRYPOINT [ "./app-payment" ]

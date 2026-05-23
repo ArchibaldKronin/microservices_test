@@ -42,7 +42,7 @@ vars:
   POSTGRES_DSN: 'postgres://order-service-user:order-service-password@localhost:5432/order-service?sslmode=disable'
 
   MODULES: assembly inventory order payment platform iam notification
-  SERVICES: core,assembly,inventory,order,payment,iam,notification
+  SERVICES: core,assembly,inventory,order,payment,iam,notification,envoy
 
 tasks:
   install-formatters:
@@ -430,6 +430,62 @@ tasks:
       - echo "[task] 🛑 Останавливаем IAM с зависимостями"
       - docker compose down --volumes
 
+  up-assembly:
+    desc: Поднять Assembly сервис и все его зависимости
+    dir: deploy/compose/assembly
+    cmds:
+      - echo "[task] 📦 Поднимаем Order с зависимостями"
+      - docker compose up --build --detach
+
+  down-assembly:
+    desc: Остановить и удалить Assembly сервис и все его зависимости
+    dir: deploy/compose/assembly
+    cmds:
+      - echo "[task] 🛑 Останавливаем Order с зависимостями"
+      - docker compose down --volumes
+
+  up-envoy:
+    desc: Поднять Envoy сервис и все его зависимости
+    dir: deploy/compose/envoy
+    cmds:
+      - echo "[task] 📦 Поднимаем Order с зависимостями"
+      - docker compose up --build --detach
+
+  down-envoy:
+    desc: Остановить и удалить Envoy сервис и все его зависимости
+    dir: deploy/compose/envoy
+    cmds:
+      - echo "[task] 🛑 Останавливаем Order с зависимостями"
+      - docker compose down --volumes
+
+  up-notification:
+    desc: Поднять Notification сервис и все его зависимости
+    dir: deploy/compose/notification
+    cmds:
+      - echo "[task] 📦 Поднимаем Order с зависимостями"
+      - docker compose up --build --detach
+
+  down-notification:
+    desc: Остановить и удалить Notification сервис и все его зависимости
+    dir: deploy/compose/notification
+    cmds:
+      - echo "[task] 🛑 Останавливаем Order с зависимостями"
+      - docker compose down --volumes
+
+  up-payment:
+    desc: Поднять Payment сервис и все его зависимости
+    dir: deploy/compose/payment
+    cmds:
+      - echo "[task] 📦 Поднимаем Order с зависимостями"
+      - docker compose up --build --detach
+
+  down-payment:
+    desc: Остановить и удалить Payment сервис и все его зависимости
+    dir: deploy/compose/payment
+    cmds:
+      - echo "[task] 🛑 Останавливаем Order с зависимостями"
+      - docker compose down --volumes
+
   up-all:
     desc: Поднять все сервисы по очереди вместе с зависимостями
     cmds:
@@ -445,6 +501,48 @@ tasks:
       - task down-inventory
       - task down-order
       - task down-iam
+
+  up-custom-all:
+    desc: Поднять ВООБЩЕ ВСЁ по очереди вместе с зависимостями
+    cmds:
+      - task up-core
+      - task up-inventory
+      - task up-order
+      - task up-iam
+      - task up-assembly
+      - task up-envoy
+      - task up-notification
+      - task up-payment
+
+  down-custom-all:
+    desc: Убить ВООБЩЕ ВСЁ по очереди вместе с зависимостями
+    cmds:
+      - task down-core
+      - task down-inventory
+      - task down-order
+      - task down-iam
+      - task down-assembly
+      - task down-envoy
+      - task down-notification
+      - task down-payment
+
+  down-without-core:
+    desc: Убить ВООБЩЕ ВСЁ кроме CORE
+    cmds:
+      - task down-inventory
+      - task down-order
+      - task down-iam
+      - task down-assembly
+      - task down-envoy
+      - task down-notification
+      - task down-payment
+
+  stop-core:
+    desc: Остановить контейнеры CORE
+    dir: deploy/compose/core
+    cmds:
+      - echo "[task] 🛑 Выключаем CORE"
+      - docker compose stop
 
   grpcurl:install:
     desc: "Устанавливает grpcurl в каталог bin"

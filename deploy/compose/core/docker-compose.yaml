@@ -40,7 +40,7 @@ services: # Раздел, в котором описываются все кон
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       # Указываем, какой listener Kafka будет использовать для связи с controller (служебный трафик Raft).
 
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:${KAFKA_INTERNAL_PORT},PLAINTEXT_EXTERNAL://localhost:${KAFKA_EXTERNAL_PORT},CONTROLLER://kafka:${KAFKA_CONTROLLER_PORT}
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:${KAFKA_INTERNAL_PORT},PLAINTEXT_EXTERNAL://kafka:${KAFKA_INTERNAL_PORT},CONTROLLER://kafka:${KAFKA_CONTROLLER_PORT}
       # Важно! Kafka сообщает клиентам, по каким адресам её можно найти.
       # - Внутри Docker сети Kafka объявляет адрес kafka:${KAFKA_INTERNAL_PORT}.
       # - Для подключения с хоста Kafka объявляет localhost:${KAFKA_EXTERNAL_PORT}.

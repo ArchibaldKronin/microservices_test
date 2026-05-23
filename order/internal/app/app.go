@@ -303,7 +303,7 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(requestProcessingTimeout))
 	r.Use(tracing.HTTPHandlerMiddleware("order-service"))
-	r.Use(a.diContainer.authMiddleware.Handle)
+	// r.Use(a.diContainer.authMiddleware.Handle)
 
 	r.Get("/health", health.HealthCheck)
 	r.Get("/ready", health.ReadyCheck(
@@ -312,7 +312,12 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 		a.diContainer.connectionPayment,
 	))
 
-	r.Mount("/", a.orderServer)
+	r.Group(func(protected chi.Router) {
+		protected.Use(a.diContainer.authMiddleware.Handle)
+		protected.Mount("/", a.orderServer)
+	})
+
+	// r.Mount("/", a.orderServer)
 
 	a.httpServer = &http.Server{
 		Addr:              config.AppConfig().OrderHTTP.Address(),

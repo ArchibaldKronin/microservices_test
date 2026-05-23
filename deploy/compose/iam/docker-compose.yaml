@@ -1,5 +1,42 @@
 services: # Раздел, в котором описываются все контейнеры, необходимые для IAM-сервиса
 
+  iam-service:
+    build:
+      context: ../../..
+      dockerfile: deploy/docker/iam/Dockerfile
+
+    container_name: iam-service
+
+    ports:
+      - ${GRPC_PORT}:50053
+
+    env_file:
+      - .env
+
+    environment:
+      - POSTGRES_HOST=postgres-iam
+      - REDIS_HOST=redis-iam
+      - POSTGRES_PORT=5432
+      - REDIS_PORT=6379
+
+    depends_on:
+      postgres-iam:
+        condition: service_healthy
+      redis-iam:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "grpc-health-probe", "-addr=localhost:50053"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+    restart: unless-stopped
+
+    networks:
+      - microservices-net
+
   postgres-iam: # Сервис с PostgreSQL, используемый IAM-сервисом для хранения данных пользователей
     image: postgres:17.0-alpine3.20 # Используем официальный образ PostgreSQL 17 на базе Alpine — он лёгкий и быстрый
     container_name: postgres-iam # Устанавливаем читаемое имя контейнера — удобно при отладке и работе в CLI

@@ -34,7 +34,7 @@ ADD https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.3
 
 RUN chmod +x grpc-health-probe
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app-inventory ./inventory/cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app-iam ./iam/cmd/main.go
 
 # ============================
 # Stage 2: Final image
@@ -48,12 +48,14 @@ WORKDIR /app
 
 USER appuser
 
-COPY --from=builder /app/app-inventory .
+COPY --from=builder /app/app-iam .
 
 COPY --from=builder /app/grpc-health-probe /bin/grpc-health-probe
 
-# EXPOSE 50051
+COPY --from=builder /app/iam/migrations ./migrations
 
-HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD grpc-health-probe -addr=localhost:50051 || exit 1
+HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD grpc-health-probe -addr=localhost:50053 || exit 1
 
-ENTRYPOINT [ "./app-inventory" ]
+EXPOSE 50053
+
+ENTRYPOINT [ "./app-iam" ]
