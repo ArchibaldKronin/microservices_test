@@ -8,6 +8,9 @@ services:
 
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
+      
+      - ../../../shared/pkg/proto/inventory/v1/inventory_descriptor.pb:/etc/envoy/inventory_descriptor.pb
+      # Примонтируем сгенерированный proto дескриптор для HTTP-to-gRPC transcoding
 
     ports:
       - ${ENVOY_EXTERNAL_HTTP_PORT}:${ENVOY_INTERNAL_HTTP_PORT}
