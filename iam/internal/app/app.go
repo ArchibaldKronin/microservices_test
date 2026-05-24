@@ -16,6 +16,7 @@ import (
 	"github.com/ArchibaldKronin/microservices_test/platform/pkg/tracing"
 	auth_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/auth/v1"
 	user_v1 "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/user/v1"
+	authv3 "github.com/envoyproxy/go-control-plane/envoy/service/auth/v3"
 	"github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -212,14 +213,23 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 	userApi, err := a.diContainer.UserV1Api(ctx)
 	if err != nil {
 		logger.Error(ctx, "failed to create User api", zap.Error(err))
+		return err
 	}
 	authApi, err := a.diContainer.AuthV1Api(ctx)
 	if err != nil {
 		logger.Error(ctx, "failed to create Auth api", zap.Error(err))
+		return err
 	}
 
 	user_v1.RegisterUserServiceServer(a.grpcServer, userApi)
 	auth_v1.RegisterAuthServiceServer(a.grpcServer, authApi)
+
+	authv3Api, ok := authApi.(authv3.AuthorizationServer)
+	if !ok {
+		logger.Error(ctx, "failed to get auth interface", zap.Error(err))
+		return err
+	}
+	authv3.RegisterAuthorizationServer(a.grpcServer, authv3Api)
 
 	return nil
 }

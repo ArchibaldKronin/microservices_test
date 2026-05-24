@@ -3,13 +3,19 @@ syntax = "proto3";
 package user.v1;
 
 import "common/v1/user.proto";
+import "google/api/annotations.proto";
 
 option go_package = "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/user/v1;user_v1";
 
 // API для работы с пользователем
 service UserService {
   // Зарегистрироваться
-  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/user/register"
+      body: "*"
+    };
+  }
 
   // Получить информацию о пользователе по идентификатору пользователя
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
