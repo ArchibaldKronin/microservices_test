@@ -170,12 +170,17 @@ func (a *App) initListener(ctx context.Context) error {
 
 func (a *App) initGRPCServer(ctx context.Context) error {
 	//nolint:gosec
-	authInterceptor, _ := a.diContainer.AuthInterceptor(ctx)
+	// authInterceptor, _ := a.diContainer.AuthInterceptor(ctx)
 
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
 		grpc.ChainUnaryInterceptor(
-			authInterceptor.Unary(),
+			// selector.UnaryServerInterceptor(
+			// 	authInterceptor.Unary(),
+			// 	selector.MatchFunc(func(ctx context.Context, callMeta interceptors.CallMeta) bool {
+			// 		return callMeta.FullMethod() != "/grpc.health.v1.Health/Check" && callMeta.FullMethod() != "/grpc.health.v1.Health/Watch"
+			// 	}),
+			// ),
 			tracing.UnaryServerInterceptor("inventory-service"),
 		),
 	)

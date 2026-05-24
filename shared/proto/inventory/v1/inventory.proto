@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package inventory.v1;
 
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/ArchibaldKronin/microservices_test/shared/pkg/proto/inventory/v1;inventory_v1";
@@ -9,10 +10,17 @@ option go_package = "github.com/ArchibaldKronin/microservices_test/shared/pkg/pr
 // API для доступа к запчастям
 service InventoryService {
   // Получить запчасть
-  rpc GetPart(GetPartRequest) returns (GetPartResponse);
+  rpc GetPart(GetPartRequest) returns (GetPartResponse) {
+    option (google.api.http) = {get: "/api/v1/inventory/{uuid}"};
+  }
 
   // Получить запчасти по фильтру
-  rpc ListParts(ListPartsRequest) returns (ListPartsResponse);
+  rpc ListParts(ListPartsRequest) returns (ListPartsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/inventory/search"
+      body: "*"
+    };
+  }
 }
 
 // Категория запчасти

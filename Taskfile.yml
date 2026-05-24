@@ -42,7 +42,7 @@ vars:
   POSTGRES_DSN: 'postgres://order-service-user:order-service-password@localhost:5432/order-service?sslmode=disable'
 
   MODULES: assembly inventory order payment platform iam notification
-  SERVICES: core,assembly,inventory,order,payment,iam,notification
+  SERVICES: core,assembly,inventory,order,payment,iam,notification,envoy
 
 tasks:
   install-formatters:
@@ -170,8 +170,37 @@ tasks:
           GOBIN={{.BIN_DIR}} go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@{{.PROTOC_GEN_GO_GRPC_VERSION}}
         }
 
-  proto:gen:
+  proto:build:all-inventory:
+    desc: Сборка proto inventory с http аннотациями для Envoy
     deps: [ install-buf, proto:install-plugins, proto:lint ]
+    dir: shared/proto
+    cmds:
+      - '{{.BUF}} build --as-file-descriptor-set --output "../pkg/proto/inventory/v1/inventory_descriptor.pb"'
+
+  proto:build:all-auth:
+    desc: Сборка proto auth с http аннотациями для Envoy
+    deps: [ install-buf, proto:install-plugins, proto:lint ]
+    dir: shared/proto
+    cmds:
+      - '{{.BUF}} build --as-file-descriptor-set --output "../pkg/proto/auth/v1/auth_descriptor.pb"'
+      
+  proto:build:all-user:
+    desc: Сборка proto user с http аннотациями для Envoy
+    deps: [ install-buf, proto:install-plugins, proto:lint ]
+    dir: shared/proto
+    cmds:
+      - '{{.BUF}} build --as-file-descriptor-set --output "../pkg/proto/user/v1/user_descriptor.pb"'
+
+  proto:build:all-gateway:
+    desc: Сборка общего proto descriptor для Envoy gateway
+    deps: [ install-buf, proto:install-plugins, proto:lint ]
+    dir: shared/proto
+    cmds:
+      - mkdir -p ../pkg/proto/envoy
+      - '{{.BUF}} build --as-file-descriptor-set --output "../pkg/proto/envoy/gateway_descriptor.pb"'
+
+  proto:gen:
+    deps: [ install-buf, proto:install-plugins, proto:lint]
     desc: Генерация Go-кода из .proto
     dir: shared/proto
     cmds:
@@ -430,6 +459,62 @@ tasks:
       - echo "[task] 🛑 Останавливаем IAM с зависимостями"
       - docker compose down --volumes
 
+  up-assembly:
+    desc: Поднять Assembly сервис и все его зависимости
+    dir: deploy/compose/assembly
+    cmds:
+      - echo "[task] 📦 Поднимаем Assembly с зависимостями"
+      - docker compose up --build --detach
+
+  down-assembly:
+    desc: Остановить и удалить Assembly сервис и все его зависимости
+    dir: deploy/compose/assembly
+    cmds:
+      - echo "[task] 🛑 Останавливаем Assembly с зависимостями"
+      - docker compose down --volumes
+
+  up-envoy:
+    desc: Поднять Envoy сервис и все его зависимости
+    dir: deploy/compose/envoy
+    cmds:
+      - echo "[task] 📦 Поднимаем Envoy с зависимостями"
+      - docker compose up --build --detach
+
+  down-envoy:
+    desc: Остановить и удалить Envoy сервис и все его зависимости
+    dir: deploy/compose/envoy
+    cmds:
+      - echo "[task] 🛑 Останавливаем Envoy с зависимостями"
+      - docker compose down --volumes
+
+  up-notification:
+    desc: Поднять Notification сервис и все его зависимости
+    dir: deploy/compose/notification
+    cmds:
+      - echo "[task] 📦 Поднимаем Notification с зависимостями"
+      - docker compose up --build --detach
+
+  down-notification:
+    desc: Остановить и удалить Notification сервис и все его зависимости
+    dir: deploy/compose/notification
+    cmds:
+      - echo "[task] 🛑 Останавливаем Notification с зависимостями"
+      - docker compose down --volumes
+
+  up-payment:
+    desc: Поднять Payment сервис и все его зависимости
+    dir: deploy/compose/payment
+    cmds:
+      - echo "[task] 📦 Поднимаем Payment с зависимостями"
+      - docker compose up --build --detach
+
+  down-payment:
+    desc: Остановить и удалить Payment сервис и все его зависимости
+    dir: deploy/compose/payment
+    cmds:
+      - echo "[task] 🛑 Останавливаем Payment с зависимостями"
+      - docker compose down --volumes
+
   up-all:
     desc: Поднять все сервисы по очереди вместе с зависимостями
     cmds:
@@ -445,6 +530,67 @@ tasks:
       - task down-inventory
       - task down-order
       - task down-iam
+
+  up-custom-all:
+    desc: Поднять ВООБЩЕ ВСЁ по очереди вместе с зависимостями
+    cmds:
+      - task up-core
+      - task up-inventory
+      - task up-order
+      - task up-iam
+      - task up-assembly
+      - task up-envoy
+      - task up-notification
+      - task up-payment
+
+  down-custom-all:
+    desc: Убить ВООБЩЕ ВСЁ по очереди вместе с зависимостями
+    cmds:
+      - task down-core
+      - task down-inventory
+      - task down-order
+      - task down-iam
+      - task down-assembly
+      - task down-envoy
+      - task down-notification
+      - task down-payment
+
+  down-without-core:
+    desc: Убить ВООБЩЕ ВСЁ кроме CORE
+    cmds:
+      - task down-inventory
+      - task down-order
+      - task down-iam
+      - task down-assembly
+      - task down-envoy
+      - task down-notification
+      - task down-payment
+
+  up-without-core:
+    desc: Поднять ВООБЩЕ ВСЁ кроме CORE
+    cmds:
+      - task down-inventory
+      - task down-order
+      - task down-iam
+      - task down-assembly
+      - task down-envoy
+      - task down-notification
+      - task down-payment
+
+  stop-core:
+    desc: Остановить контейнеры CORE
+    dir: deploy/compose/core
+    cmds:
+      - echo "[task] 🛑 Выключаем CORE"
+      - docker compose stop
+
+  start-core:
+    desc: Остановить контейнеры CORE
+    dir: deploy/compose/core
+    cmds:
+      - echo "[task] 📦 Включаем CORE"
+      - docker compose start
+
 
   grpcurl:install:
     desc: "Устанавливает grpcurl в каталог bin"

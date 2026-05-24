@@ -26,6 +26,11 @@ func NewAuthMiddleware(iamClient IAMClient) *AuthMiddleware {
 // Handle обрабатывает HTTP запрос с аутентификацией
 func (m *AuthMiddleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// if r.URL.EscapedPath() == "/health" || r.URL.EscapedPath() == "/ready" {
+		// 	next.ServeHTTP(w, r.WithContext(r.Context()))
+		// 	return
+		// }
+
 		sessionUUID := r.Header.Get(SessionUUIDHeader)
 		if sessionUUID == "" {
 			writeErrorResponse(w, http.StatusUnauthorized, "MISSING_SESSION", "Authentication required")

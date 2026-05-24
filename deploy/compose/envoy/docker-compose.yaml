@@ -1,0 +1,43 @@
+services:
+  envoy:
+    image: ${ENVOY_IMAGE_NAME}
+
+    container_name: ${ENVOY_CONTAINER_NAME}
+
+    # depends_on:
+
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+      
+      - ../../../shared/pkg/proto/envoy/gateway_descriptor.pb:/etc/envoy/gateway_descriptor.pb
+      # Примонтируем сгенерированный proto дескриптор для HTTP-to-gRPC transcoding
+
+      # - ../../../shared/pkg/proto/auth/v1/auth_descriptor.pb:/etc/envoy/auth_descriptor.pb
+      # - ../../../shared/pkg/proto/user/v1/user_descriptor.pb:/etc/envoy/user_descriptor.pb
+
+    ports:
+      - ${ENVOY_EXTERNAL_HTTP_PORT}:${ENVOY_INTERNAL_HTTP_PORT}
+      - ${ENVOY_ADMIN_PORT}:8081
+
+    healthcheck:
+      test: [
+          "CMD-SHELL",
+          "timeout 1 bash -c '</dev/tcp/localhost/8081' && timeout 1 bash -c '</dev/tcp/order-service/8080'"
+      ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+    restart: unless-stopped
+
+    networks:
+      - microservices-net
+
+networks:
+  microservices-net:
+    external: true
+  
+
+  
+      

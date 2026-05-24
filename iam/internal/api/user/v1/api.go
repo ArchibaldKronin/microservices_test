@@ -9,6 +9,8 @@ type apiUser struct {
 	userService service.UserService
 
 	user_v1.UnimplementedUserServiceServer
+
+	// authv3.UnimplementedAuthorizationServer
 }
 
 func NewApiUser(userService service.UserService) *apiUser {
